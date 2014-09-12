@@ -10,15 +10,13 @@
 
 #include "MBCore.hpp"
 
-
-
-
 int main(int argc, char **argv)
 {
 
-//create a moab interface
-MBInterface *mbi = new MBCore;
+  //create a moab interface
+  MBInterface *mbi = new MBCore;
 
+mbi->load_file("cube.h5m");
 
 
 return 0;
