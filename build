@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo Building create_hv_mesh...
+g++ create_hv_mesh.cpp -o create_hv_mesh -I/home/shriwise/dagmc_blds/moabs/include -L/home/shriwise/dagmc_blds/moabs/lib/ -lMOAB 
