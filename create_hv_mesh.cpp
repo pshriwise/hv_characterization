@@ -8,9 +8,9 @@
 #include <time.h>
 #include <vector>
 
-
-#include "gen.hpp"
 #include "meshkit/MKCore.hpp"
+#include "meshkit/ModelEnt.hpp"
+#include "gen.hpp"
 
 using namespace MeshKit;
 
@@ -25,7 +25,23 @@ int main(int argc, char **argv)
   mk->load_mesh("cube.h5m");
 
   //Get all of the surface ModelEnts
+  MEntVector surfs;
+  mk->get_entities_by_dimension(2, surfs);
   
+  std::cout << "There are " << surfs.size() << " surfaces in this model." << std::endl;
+
+  //Now to find one of the surfaces that is constant in z (for convenience)
+  for( MEntVector::iterator i = surfs.begin(); i != surfs.end() ; i++)
+    {
+      //get the meshset handle for this surface
+      moab::EntityHandle sh = surfs[0]->mesh_handle();
+      //get the triangles in this meshset
+      std::vector<moab::EntityHandle> tris;
+      mk->moab_instance()->get_entities_by_type( sh, MBTRI, tris);
+      std::cout << "There are " << tris.size() << " triangles in this surface." << std::endl;
+
+
+    }
   
   
   return 0;
