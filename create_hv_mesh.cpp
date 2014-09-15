@@ -17,6 +17,7 @@ using namespace MeshKit;
 MKCore *mk;
 
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf);
+void tear_down_surface( moab::EntityHandle surf );
 
 int main(int argc, char **argv)
 {
@@ -34,29 +35,16 @@ int main(int argc, char **argv)
 
   //Now to find one of the surfaces that is constant in z (for convenience)
   moab::EntityHandle hv_surf;
-  get_hv_surf(surfs, hv_surf);
 
-  
-  //get the triangles for this surface and delete them
-  std::vector<moab::EntityHandle> tris;
-  mk->moab_instance()->get_entities_by_type( hv_surf, MBTRI, tris);
+  get_hv_surf( surfs, hv_surf );
 
-  //remove these triangle from the meshset and destroy them
-  std::cout << "Tearing down the surface..." << std::endl; 
-
-  mk->moab_instance()->remove_entities( hv_surf, &(tris[0]), tris.size());
-  mk->moab_instance()->delete_entities( &(tris[0]), tris.size());
-
-  std::vector<moab::EntityHandle> test_tris;
-  mk->moab_instance()->get_entities_by_type( 0, MBTRI, test_tris, true);
-  std::cout << "There are now " << test_tris.size() << " triangles in the model" << std::endl; 
-
+  tear_down_surface( hv_surf );
+ 
   
 
   return 0;
 
 }
-
 
 
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
@@ -93,4 +81,24 @@ void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
       }
 
     } //end loop  
+}
+
+
+void tear_down_surface( moab::EntityHandle surf)
+{
+
+ //get the triangles for this surface and delete them
+  std::vector<moab::EntityHandle> tris;
+  mk->moab_instance()->get_entities_by_type( surf, MBTRI, tris);
+
+  //remove these triangle from the meshset and destroy them
+  std::cout << "Tearing down the surface..." << std::endl; 
+
+  mk->moab_instance()->remove_entities( surf, &(tris[0]), tris.size());
+  mk->moab_instance()->delete_entities( &(tris[0]), tris.size());
+
+  std::vector<moab::EntityHandle> test_tris;
+  mk->moab_instance()->get_entities_by_type( 0, MBTRI, test_tris, true);
+  std::cout << "There are now " << test_tris.size() << " triangles in the model" << std::endl;
+
 }
