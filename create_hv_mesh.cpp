@@ -12,16 +12,20 @@
 #include "gen.hpp"
 #include "meshkit/MKCore.hpp"
 
-MeshKit::MKCore *mk;
+using namespace MeshKit;
+
+MKCore *mk;
 
 int main(int argc, char **argv)
 {
 
-  mk = new MeshKit::MKCore();
+  mk = new MKCore();
   
   //Load the mesh file
   mk->load_mesh("cube.h5m");
 
+  //Get all of the surface ModelEnts
+  
   
   
   return 0;
