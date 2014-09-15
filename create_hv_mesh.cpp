@@ -16,6 +16,8 @@ using namespace MeshKit;
 
 MKCore *mk;
 
+void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf);
+
 int main(int argc, char **argv)
 {
 
@@ -32,6 +34,17 @@ int main(int argc, char **argv)
 
 moab::EntityHandle hv_surf;
 
+
+get_hv_surf(surfs, hv_surf);
+  
+  return 0;
+
+}
+
+
+
+void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
+{
   //Now to find one of the surfaces that is constant in z (for convenience)
 for( unsigned int i = 0 ; i < surfs.size() ; i++)
     {
@@ -68,13 +81,6 @@ if( tri_norm == check){
 hv_surf = sh;
 break;
 }
-     
-    }
-  
-  
-  return 0;
-
 }
 
-
-
+}
