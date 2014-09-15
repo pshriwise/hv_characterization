@@ -1,24 +1,29 @@
 
 #include <iostream>
 #include <sstream>
-#include <iomanip> // for setprecision
-#include <limits> // for min/max values
+#include <iomanip> 
+#include <limits> 
 #include <assert.h>
 #include <math.h>
 #include <time.h>
 #include <vector>
 
-#include "MBCore.hpp"
+
+#include "gen.hpp"
+#include "meshkit/MKCore.hpp"
+
+MeshKit::MKCore *mk;
 
 int main(int argc, char **argv)
 {
 
-  //create a moab interface
-  MBInterface *mbi = new MBCore;
+  mk = new MeshKit::MKCore();
+  
+  //Load the mesh file
+  mk->load_mesh("cube.h5m");
 
-mbi->load_file("cube.h5m");
-
-
-return 0;
+  
+  
+  return 0;
 
 }
