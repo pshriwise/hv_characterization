@@ -19,6 +19,7 @@ MKCore *mk;
 
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf);
 void tear_down_surface( moab::EntityHandle surf );
+double polygon_area( std::vector<moab::EntityHandle> verts);
 
 int main(int argc, char **argv)
 {
@@ -46,39 +47,14 @@ int main(int argc, char **argv)
   std::vector<moab::EntityHandle> orig_verts;
   mk->moab_instance()->get_entities_by_type( hv_surf, MBVERTEX, orig_verts);
 
-  std::cout << "There are " << orig_verts.size() << " vertices in this surface." << std::endl;
+  double surface_area = polygon_area( orig_verts );
 
-  //get the coordinates of the outer vertices
-  double orig_vert_coords[orig_verts.size()*3];
-  mk->moab_instance()->get_coords( &(orig_verts[0]), orig_verts.size(), &(orig_vert_coords[0]) );
-
-  const MBCartVect* coords = reinterpret_cast<const MBCartVect*>(orig_vert_coords);  
-  //Calculate the surface's area
-  unsigned int num_vertices = orig_verts.size();
-  MBCartVect mid(0,0,0);
-  for (int i = 0; i < num_vertices; ++i) mid += coords[i];
-  mid /= num_vertices;
-
-  double sum = 0.0;
-  for (int i = 0; i < num_vertices; i++)
-    {
-      int j = (i+1)%(num_vertices);
-      MBCartVect pnt1, pnt2;
-      pnt1 = coords[i];
-      pnt2 = coords[j];
-      //pnt1[0] = orig_vert_coords[i]; pnt1[1] = orig_vert_coords[i+1]; pnt1[2] = orig_vert_coords[i+2];
-      //pnt2[0] = orig_vert_coords[j]; pnt2[1] = orig_vert_coords[j+1]; pnt2[2] = orig_vert_coords[j+2];
-      sum += ((mid - pnt1) * (mid - pnt2)).length();
-    }
-  double  total_area = sum;
-
-  std::cout << "The total area of this surface is: " << total_area << std::endl;
+  
 
   mk->save_mesh("cube_mod.h5m");
   return 0;
 
 }
-
 
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
 {
@@ -134,4 +110,37 @@ void tear_down_surface( moab::EntityHandle surf)
   mk->moab_instance()->get_entities_by_type( 0, MBTRI, test_tris, true);
   std::cout << "There are now " << test_tris.size() << " triangles in the model" << std::endl;
 
+}
+
+double polygon_area( std::vector<moab::EntityHandle> verts)
+{
+  unsigned int num_vertices = verts.size();
+
+  //std::cout << "There are " << num_vertices << " vertices in this surface." << std::endl;
+
+  //get the coordinates of the vertices
+  double vert_coords[verts.size()*3];
+  mk->moab_instance()->get_coords( &(verts[0]), verts.size(), &(vert_coords[0]) );
+
+  const MBCartVect* coords = reinterpret_cast<const MBCartVect*>(vert_coords);  
+
+  //Calculate the surface's area
+  MBCartVect mid(0,0,0);
+  for (int i = 0; i < num_vertices; ++i) mid += coords[i];
+  mid /= num_vertices;
+
+  double sum = 0.0;
+  for (int i = 0; i < num_vertices; i++)
+    {
+      int j = (i+1)%(num_vertices);
+      MBCartVect pnt1, pnt2;
+      pnt1 = coords[i];
+      pnt2 = coords[j];
+      sum += ((mid - pnt1) * (mid - pnt2)).length();
+    }
+  double  poly_area = sum;
+
+  //std::cout << "The total area of this polygon is: " << poly_area << std::endl;
+  
+  return poly_area;
 }
