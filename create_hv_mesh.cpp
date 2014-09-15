@@ -35,7 +35,24 @@ int main(int argc, char **argv)
   //Now to find one of the surfaces that is constant in z (for convenience)
   moab::EntityHandle hv_surf;
   get_hv_surf(surfs, hv_surf);
+
   
+  //get the triangles for this surface and delete them
+  std::vector<moab::EntityHandle> tris;
+  mk->moab_instance()->get_entities_by_type( hv_surf, MBTRI, tris);
+
+  //remove these triangle from the meshset and destroy them
+  std::cout << "Tearing down the surface..." << std::endl; 
+
+  mk->moab_instance()->remove_entities( hv_surf, &(tris[0]), tris.size());
+  mk->moab_instance()->delete_entities( &(tris[0]), tris.size());
+
+  std::vector<moab::EntityHandle> test_tris;
+  mk->moab_instance()->get_entities_by_type( 0, MBTRI, test_tris, true);
+  std::cout << "There are now " << test_tris.size() << " triangles in the model" << std::endl; 
+
+  
+
   return 0;
 
 }
