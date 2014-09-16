@@ -141,17 +141,29 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
       //add the xy vert into the MM set...
       M.push_back(xy);
 
-      std::vector<moab::EntityHandle> *y_box = &L, *x_box=&T;
-      // select the proper box to add to based on the corner point we're expanding from
+      // select the proper box to add to based on the corner point we're expanding from      
+      std::vector<moab::EntityHandle> *y_box = &L, *x_box=&T; //dummy setting for the pointers
       if( coords[0] < 0 ) y_box = &L; else y_box = &R;
       if( coords[1] < 0 ) x_box = &B; else x_box = &T;
 
+      // if there are no verts in the list, add xy then y, if verts exist, add y first instead
       if( y_box->size() != 0 ) { y_box->push_back(xy); y_box->push_back(y); }
       else { y_box->push_back(y); y_box->push_back(xy); }
-
+      // same as above but for the x-adj box
       if( x_box->size() != 0 ) { x_box->push_back(xy); x_box->push_back(x); }
       else { x_box->push_back(x); x_box->push_back(xy); }
       
+
+      // this is a similar process as above, but for creating the new curve data
+      std::vector<moab::EntityHandle> *y_curve = &W, *x_curve = &S;
+      if( coords[0] < 0 ) y_curve = &W; else y_curve = &E;
+      if( coords[1] < 0 ) x_curve = &S; else x_curve = &N;
+
+      if( y_curve->size() != 0 ) { y_curve->push_back(y); y_curve->push_back(*i); }
+      else { y_curve->push_back(*i); y_curve->push_back(y); }
+
+      if( y_curve->size() != 0 ) { y_curve->push_back(y); y_curve->push_back(*i); }
+      else { y_curve->push_back(*i); y_curve->push_back(y); }
       
       //create a new quad here (for now)
       std::vector<moab::EntityHandle> quad_verts(4);
