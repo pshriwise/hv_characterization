@@ -17,6 +17,8 @@ using namespace MeshKit;
 
 MKCore *mk;
 
+
+void refacet_surface( moab::EntityHandle surf, double A_f );
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf);
 void tear_down_surface( moab::EntityHandle surf );
 double polygon_area( std::vector<moab::EntityHandle> verts);
@@ -25,7 +27,6 @@ void add_box_to_surf( moab::EntityHandle surf, std::vector<moab::EntityHandle> v
   
 int main(int argc, char **argv)
 {
-
 
   //temp value of A_f, the fraction of the total surface area claimed
   //by high valencies
@@ -44,15 +45,26 @@ int main(int argc, char **argv)
 
   //Now to find one of the surfaces that is constant in z (for convenience)
   moab::EntityHandle hv_surf;
-
   get_hv_surf( surfs, hv_surf );
 
-  tear_down_surface( hv_surf );
+  //refacet the surface using the desired area fraction for the hv region
+  refacet_surface( hv_surf, A_f );
+
+  mk->save_mesh("cube_mod.h5m");
+  return 0;
+
+}
+
+void refacet_surface( moab::EntityHandle surf, double A_f )
+{
+
+  //remove all 2-D entities on the surfce
+  tear_down_surface( surf );
+
  
   //now its time to create new boxes using the remaining surface verts
-
   std::vector<moab::EntityHandle> orig_verts;
-  mk->moab_instance()->get_entities_by_type( hv_surf, MBVERTEX, orig_verts);
+  mk->moab_instance()->get_entities_by_type( surf, MBVERTEX, orig_verts);
 
   double surface_area = polygon_area( orig_verts );
   //going to start taking advantage of knowing the geometry here...
@@ -72,7 +84,7 @@ int main(int argc, char **argv)
   std::vector<moab::EntityHandle> L,R,M,T,B;
   //start creating new verts and adding them to the appropriate lists
 
-  //take the first vertex and determine where it is
+  //create the new areas on this surface
   for(std::vector<moab::EntityHandle>::iterator i = orig_verts.begin(); i!=orig_verts.end(); i++)
     {
       MBCartVect coords;
@@ -117,18 +129,18 @@ int main(int argc, char **argv)
       quad_verts[3] =  *i;
 
       moab::EntityHandle new_quad;
-      add_box_to_surf( hv_surf, quad_verts);
+      add_box_to_surf( surf, quad_verts);
 
     }
 
   //create the L box
-  add_box_to_surf( hv_surf, L);
+  add_box_to_surf( surf, L);
   //create the T box
-  add_box_to_surf( hv_surf, T);
+  add_box_to_surf( surf, T);
   //create the R box
-  add_box_to_surf( hv_surf, R);
+  add_box_to_surf( surf, R);
   //create the B box
-  add_box_to_surf( hv_surf, B);
+  add_box_to_surf( surf, B);
 
 
   //re-order the M verts
@@ -148,10 +160,7 @@ int main(int argc, char **argv)
 
   M = new_M;
 
-  add_box_to_surf( hv_surf, M);
-
-  mk->save_mesh("cube_mod.h5m");
-  return 0;
+  add_box_to_surf( surf, M);
 
 }
 
@@ -211,6 +220,8 @@ void tear_down_surface( moab::EntityHandle surf)
 
 }
 
+
+
 double polygon_area( std::vector<moab::EntityHandle> verts)
 {
   unsigned int num_vertices = verts.size();
@@ -261,3 +272,4 @@ void add_box_to_surf( moab::EntityHandle surf, std::vector<moab::EntityHandle> v
   mk->moab_instance()->add_entities( surf, &(tris[0]), 2);
 
 }
+
