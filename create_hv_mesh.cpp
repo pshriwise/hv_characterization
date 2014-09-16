@@ -24,6 +24,7 @@ void tear_down_surface( moab::EntityHandle surf );
 double polygon_area( std::vector<moab::EntityHandle> verts);
 //assumes verts are in the proper order
 void add_box_to_surf( moab::EntityHandle surf, std::vector<moab::EntityHandle> verts);
+void replace_curves( std::vector<moab::EntityHandle> orig_curves, std::vector<std::vector<moab::EntityHandle> > new_curve_verts);
   
 int main(int argc, char **argv)
 {
@@ -142,7 +143,7 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
       M.push_back(xy);
 
       // select the proper box to add to based on the corner point we're expanding from      
-      std::vector<moab::EntityHandle> *y_box = &L, *x_box=&T; //dummy setting for the pointers
+      std::vector<moab::EntityHandle> *y_box = &L, *x_box= &T; //dummy setting for the pointers
       if( coords[0] < 0 ) y_box = &L; else y_box = &R;
       if( coords[1] < 0 ) x_box = &B; else x_box = &T;
 
@@ -162,8 +163,8 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
       if( y_curve->size() != 0 ) { y_curve->push_back(y); y_curve->push_back(*i); }
       else { y_curve->push_back(*i); y_curve->push_back(y); }
 
-      if( y_curve->size() != 0 ) { y_curve->push_back(y); y_curve->push_back(*i); }
-      else { y_curve->push_back(*i); y_curve->push_back(y); }
+      if( x_curve->size() != 0 ) { x_curve->push_back(x); x_curve->push_back(*i); }
+      else { x_curve->push_back(*i); x_curve->push_back(x); }
       
       //create a new quad here (for now)
       std::vector<moab::EntityHandle> quad_verts(4);
@@ -203,8 +204,18 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
     }
 
   M = new_M;
-
+  
+  //create the middle box
   add_box_to_surf( surf, M);
+
+  //replace the old curves with the new ones
+  std::vector<moab::EntityHandle> curves;
+  mk->moab_instance()->get_child_meshsets( surf, curves);
+  std::vector<std::vector<moab::EntityHandle> > new_curve_verts;
+  new_curve_verts.push_back(N);   new_curve_verts.push_back(S);
+  new_curve_verts.push_back(E);   new_curve_verts.push_back(W);
+
+  replace_curves( curves, new_curve_verts);
 
 }
 
@@ -318,3 +329,44 @@ void add_box_to_surf( moab::EntityHandle surf, std::vector<moab::EntityHandle> v
 
 }
 
+void replace_curves( std::vector<moab::EntityHandle> orig_curves, std::vector<std::vector<moab::EntityHandle> > new_curve_verts)
+{
+  
+  int matches = 0;
+  //for each original curve, get the verts and see if there is a match for the beginning and end points
+  for(std::vector<moab::EntityHandle>::iterator i = orig_curves.begin(); i != orig_curves.end(); i++)
+    {
+      
+      //get the curve verts
+      std::vector<moab::EntityHandle> orig_curve_verts;
+      mk->moab_instance()->get_entities_by_type( *i, MBVERTEX, orig_curve_verts);
+
+      for(std::vector<std::vector<moab::EntityHandle> >::iterator j = new_curve_verts.begin();  j != new_curve_verts.end(); j++)
+	{
+	  //look for a match 
+	  bool match = false;
+	  std::vector<moab::EntityHandle> these_verts= *j;
+	  if( orig_curve_verts.front() == these_verts.front() && orig_curve_verts.back() == these_verts.back() )
+	    match = true;
+	  //check the reverse sense in case the vert orders are just backwards
+	  if( orig_curve_verts.back() == these_verts.front() && orig_curve_verts.front() == these_verts.back() )
+	    {
+	      std::reverse(these_verts.begin(), these_verts.end());
+	      match = true;
+	    }
+
+	  //if we have a match we will clear-out the meshset
+	  //and add the new verts to replace the previous curve
+	  if(match)
+	    {
+	      matches++;
+	      mk->moab_instance()->clear_meshset( &(*i), 1);
+	      mk->moab_instance()->add_entities( *i, &(these_verts[0]), these_verts.size());
+	      
+	    }
+	  else continue;
+	} // new curve verts loop
+    }// orig curves loop
+
+  if(matches != 4) std::cout << "Warning: Not all curves were replaced successfully!" << std::endl;
+}
