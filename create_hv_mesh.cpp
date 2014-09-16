@@ -80,8 +80,40 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
 
   //get the move distance for the given area. 
   double bump_dist = 0.5*(surface_side - hv_side);
+  /*
+                    //  NEW SURFACE DESIGN  \\
 
+                          North Curve
+   //////////////////////////////////////////////////////////////
+   //              //                        //                //
+   //              //                        //                //
+   //              //            U           //                //
+   //              //                        //                //
+   //              //                        //                //
+ W ////////////////////////////////////////////////////////////// E
+ e //              //                        //                // a
+ s //              //                        //                // s
+ t //              //                        //                // t
+   //              //                        //                //
+ C //      L       //           M            //       R        // C
+ u //              //                        //                // u
+ r //              //                        //                // r
+ v //              //                        //                // v
+ e //              //                        //                // e
+   //////////////////////////////////////////////////////////////
+   //              //                        //                //
+   //              //                        //                //
+   //              //           B            //                //
+   //              //                        //                //
+   //              //                        //                //
+   //////////////////////////////////////////////////////////////
+                           South Curve
+  */
+
+  // Box lists (the corner boxes are created with the new verts)  
   std::vector<moab::EntityHandle> L,R,M,T,B;
+  // Curve Lists (this is where we'll place the new curve verts)
+  std::vector<moab::EntityHandle> N,S,E,W;
   //start creating new verts and adding them to the appropriate lists
 
   //create the new areas on this surface
@@ -163,6 +195,7 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   add_box_to_surf( surf, M);
 
 }
+
 
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
 {
