@@ -1,4 +1,4 @@
 #!/bin/bash
 
 echo Removing programs...
-rm create_hv_mesh
+git clean -f
