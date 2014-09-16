@@ -20,7 +20,9 @@ MKCore *mk;
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf);
 void tear_down_surface( moab::EntityHandle surf );
 double polygon_area( std::vector<moab::EntityHandle> verts);
-
+//assumes verts are in the proper order
+void add_box_to_surf( moab::EntityHandle surf, std::vector<moab::EntityHandle> verts);
+  
 int main(int argc, char **argv)
 {
 
@@ -117,29 +119,14 @@ int main(int argc, char **argv)
       mk->moab_instance()->add_entities( hv_surf, &new_quad, 1);
     }
 
-  //create the R tris
-  moab::EntityHandle L_quad;
-  mk->moab_instance()->create_element( MBQUAD, &(L[0]), 4, L_quad);
-  mk->moab_instance()->add_entities( hv_surf, &(L[0]), 4);
-  mk->moab_instance()->add_entities( hv_surf, &L_quad, 1);
-
-  //create the R quad
-  moab::EntityHandle R_quad;
-  mk->moab_instance()->create_element( MBQUAD, &(R[0]), 4, R_quad);
-  mk->moab_instance()->add_entities( hv_surf, &(R[0]), 4);
-  mk->moab_instance()->add_entities( hv_surf, &R_quad, 1);
-
-  //create the T quad
-  moab::EntityHandle T_quad;
-  mk->moab_instance()->create_element( MBQUAD, &(T[0]), 4, T_quad);
-  mk->moab_instance()->add_entities( hv_surf, &(T[0]), 4);
-  mk->moab_instance()->add_entities( hv_surf, &T_quad, 1);
-
-  //create the B quad
-  moab::EntityHandle B_quad;
-  mk->moab_instance()->create_element( MBQUAD, &(B[0]), 4, B_quad);
-  mk->moab_instance()->add_entities( hv_surf, &(B[0]), 4);
-  mk->moab_instance()->add_entities( hv_surf, &B_quad, 1);
+  //create the L box
+  add_box_to_surf( hv_surf, L);
+  //create the T box
+  add_box_to_surf( hv_surf, T);
+  //create the R box
+  add_box_to_surf( hv_surf, R);
+  //create the B box
+  add_box_to_surf( hv_surf, B);
 
   //create the MM quad 
   moab::EntityHandle M_quad;
@@ -245,4 +232,22 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
   //std::cout << "The total area of this polygon is: " << poly_area << std::endl;
   
   return poly_area;
+}
+
+//assumes verts are in the proper order
+void add_box_to_surf( moab::EntityHandle surf, std::vector<moab::EntityHandle> verts)
+{
+  
+  //create some storage for the triangles
+  std::vector<moab::EntityHandle> tris(2);
+  //create an psuedo-wrap in the vector to make triangle creation easy
+  verts.push_back(verts[3]); verts.push_back(verts[2]);
+
+  //now create the new triangles and add everything to the surface set
+  mk->moab_instance()->create_element( MBTRI, &(verts[0]), 3, tris[0]);
+  mk->moab_instance()->create_element( MBTRI, &(verts[3]), 3, tris[1]);
+
+  mk->moab_instance()->add_entities( surf, &(verts[0]), 4);
+  mk->moab_instance()->add_entities( surf, &(tris[0]), 2);
+
 }
