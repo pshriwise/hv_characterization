@@ -67,7 +67,7 @@ int main(int argc, char **argv)
   //get the move distance for the given area. 
   double bump_dist = 0.5*(surface_side - hv_side);
 
-  std::vector<moab::EntityHandle> LL,LM,LR,ML,MM,MR,UL,UM,UR;
+  std::vector<moab::EntityHandle> L,R,M,T,B;
   //start creating new verts and adding them to the appropriate lists
 
   //take the first vertex and determine where it is
@@ -93,8 +93,20 @@ int main(int argc, char **argv)
       mk->moab_instance()->create_vertex( (coords+x_n_y).array(), xy);
 
       //add the xy vert into the MM set...
-      MM.push_back(xy);
+      M.push_back(xy);
 
+      std::vector<moab::EntityHandle> *y_box = &L, *x_box=&T;
+      // select the proper box to add to based on the corner point we're expanding from
+      if( coords[0] < 0 ) y_box = &L; else y_box = &R;
+      if( coords[1] < 0 ) x_box = &B; else x_box = &T;
+
+      if( y_box->size() != 0 ) { y_box->push_back(xy); y_box->push_back(y); }
+      else { y_box->push_back(y); y_box->push_back(xy); }
+
+      if( x_box->size() != 0 ) { x_box->push_back(xy); x_box->push_back(x); }
+      else { x_box->push_back(x); x_box->push_back(xy); }
+      
+      
       //create a new quad here (for now)
       moab::EntityHandle quad_verts[] = { x, xy, y, *i};
       moab::EntityHandle new_quad;
@@ -105,13 +117,42 @@ int main(int argc, char **argv)
       mk->moab_instance()->add_entities( hv_surf, &new_quad, 1);
     }
 
-  //create the MM quad 
-  moab::EntityHandle MM_quad;
-  mk->moab_instance()->create_element( MBQUAD, &(MM[0]) , 4, MM_quad);
-  mk->moab_instance()->add_entities( hv_surf, &(MM[0]), 4);
-  mk->moab_instance()->add_entities( hv_surf, &MM_quad, 1);
-  
+  //create the R tris
+  moab::EntityHandle L_quad;
+  mk->moab_instance()->create_element( MBQUAD, &(L[0]), 4, L_quad);
+  mk->moab_instance()->add_entities( hv_surf, &(L[0]), 4);
+  mk->moab_instance()->add_entities( hv_surf, &L_quad, 1);
 
+  //create the R quad
+  moab::EntityHandle R_quad;
+  mk->moab_instance()->create_element( MBQUAD, &(R[0]), 4, R_quad);
+  mk->moab_instance()->add_entities( hv_surf, &(R[0]), 4);
+  mk->moab_instance()->add_entities( hv_surf, &R_quad, 1);
+
+  //create the T quad
+  moab::EntityHandle T_quad;
+  mk->moab_instance()->create_element( MBQUAD, &(T[0]), 4, T_quad);
+  mk->moab_instance()->add_entities( hv_surf, &(T[0]), 4);
+  mk->moab_instance()->add_entities( hv_surf, &T_quad, 1);
+
+  //create the B quad
+  moab::EntityHandle B_quad;
+  mk->moab_instance()->create_element( MBQUAD, &(B[0]), 4, B_quad);
+  mk->moab_instance()->add_entities( hv_surf, &(B[0]), 4);
+  mk->moab_instance()->add_entities( hv_surf, &B_quad, 1);
+
+  //create the MM quad 
+  moab::EntityHandle M_quad;
+  mk->moab_instance()->create_element( MBQUAD, &(M[0]) , 4, M_quad);
+  mk->moab_instance()->add_entities( hv_surf, &(M[0]), 4);
+  mk->moab_instance()->add_entities( hv_surf, &M_quad, 1);
+
+  std::vector<moab::EntityHandle> *p = &M;
+
+  int foo = 6; 
+  int *bar;
+  bar = &foo;
+  
   mk->save_mesh("cube_mod.h5m");
   return 0;
 
