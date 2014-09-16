@@ -24,6 +24,11 @@ double polygon_area( std::vector<moab::EntityHandle> verts);
 int main(int argc, char **argv)
 {
 
+
+  //temp value of A_f, the fraction of the total surface area claimed
+  //by high valencies
+  double A_f = 0.2;
+
   mk = new MKCore();
   
   //Load the mesh file
@@ -48,7 +53,63 @@ int main(int argc, char **argv)
   mk->moab_instance()->get_entities_by_type( hv_surf, MBVERTEX, orig_verts);
 
   double surface_area = polygon_area( orig_verts );
+  //going to start taking advantage of knowing the geometry here...
+  double surface_side = sqrt(surface_area);
+  double cube_area = 6*surface_area;
 
+  //now create the vertices for the new regions
+  
+  //based on surface area, get the length of one of the center-square sides
+  double hv_area = A_f*surface_area; 
+  assert( hv_area < surface_area );
+  double hv_side = sqrt(hv_area);
+
+  //get the move distance for the given area. 
+  double bump_dist = 0.5*(surface_side - hv_side);
+
+  std::vector<moab::EntityHandle> LL,LM,LR,ML,MM,MR,UL,UM,UR;
+  //start creating new verts and adding them to the appropriate lists
+
+  //take the first vertex and determine where it is
+  for(std::vector<moab::EntityHandle>::iterator i = orig_verts.begin(); i!=orig_verts.end(); i++)
+    {
+      MBCartVect coords;
+      mk->moab_instance()->get_coords( &(*i), 1, coords.array() );
+
+      //create new vertex vectors
+      double x_dist, y_dist;
+      if( coords[0] < 0 ) x_dist = bump_dist; else x_dist = -bump_dist;
+      if( coords[1] < 0 ) y_dist = bump_dist; else y_dist = -bump_dist;
+
+      MBCartVect x_only, y_only, x_n_y;
+      x_only[0]= x_dist; x_only[1] = 0; x_only[2] = 0;
+      y_only[0]= 0; y_only[1] = y_dist; y_only[2] = 0;
+      x_n_y[0] = x_dist; x_n_y[1] = y_dist; x_n_y[2] = 0;
+
+      //now create new verts at each of these points
+      moab::EntityHandle x,y,xy;
+      mk->moab_instance()->create_vertex( (coords+x_only).array(), x);
+      mk->moab_instance()->create_vertex( (coords+y_only).array(), y);
+      mk->moab_instance()->create_vertex( (coords+x_n_y).array(), xy);
+
+      //add the xy vert into the MM set...
+      MM.push_back(xy);
+
+      //create a new quad here (for now)
+      moab::EntityHandle quad_verts[] = { x, xy, y, *i};
+      moab::EntityHandle new_quad;
+      mk->moab_instance()->create_element( MBQUAD, &(quad_verts[0]), 4, new_quad);
+
+      //add this quad and verts to the surface set
+      mk->moab_instance()->add_entities( hv_surf, &(quad_verts[0]), 4);
+      mk->moab_instance()->add_entities( hv_surf, &new_quad, 1);
+    }
+
+  //create the MM quad 
+  moab::EntityHandle MM_quad;
+  mk->moab_instance()->create_element( MBQUAD, &(MM[0]) , 4, MM_quad);
+  mk->moab_instance()->add_entities( hv_surf, &(MM[0]), 4);
+  mk->moab_instance()->add_entities( hv_surf, &MM_quad, 1);
   
 
   mk->save_mesh("cube_mod.h5m");
