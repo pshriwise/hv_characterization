@@ -18,7 +18,7 @@ using namespace MeshKit;
 MKCore *mk;
 
 // creates new facets for the square surface (in const Z-plane) with a high-valence region of size A_f*(surface_area) and a valency of n
-void refacet_surface( moab::EntityHandle surf, double A_f );
+void refacet_surface( moab::EntityHandle surf, double A_f, int valence );
 // returns the verts of an empty square in the center of the surface and surrounds this square w/ triangles in a watertight fashion
 void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts );
 // creates the triangles for the high-valence area
@@ -33,10 +33,12 @@ double polygon_area( std::vector<moab::EntityHandle> verts );
 int main(int argc, char **argv)
 {
 
+  //hangle arguments
   if( 3 != argc  ) 
     {
       std::cout << "Please include all necessary arguments! Exiting..." << std::endl;
-      std::cout << "To generate a high valence region with area fraction A_f (double) and verts of valency n:" << std::endl;
+      std::cout << "To generate a high valence region with area ";
+      std::cout << "fraction A_f (double) and verts of valency n:" << std::endl;
       std::cout << "$ ./create_hv_mesh <A_f> <n>" << std::endl;
       return 0;
     }
@@ -44,7 +46,7 @@ int main(int argc, char **argv)
   double A_f = atof(argv[1]);
   //make sure the input of A_f is valid
   if( 1 <= A_f ){ std::cout << "Area fraction A_f must be less than 1." << std::endl; return 0; }
-  int n = atoi(argv[2]);
+  int valence = atoi(argv[2]);
 
   mk = new MKCore();
   
@@ -62,7 +64,7 @@ int main(int argc, char **argv)
   get_hv_surf( surfs, hv_surf );
 
   //refacet the surface using the desired area fraction for the hv region
-  refacet_surface( hv_surf, A_f );
+  refacet_surface( hv_surf, A_f, valence );
 
   mk->save_mesh("cube_mod.h5m");
   return 0;
@@ -70,7 +72,7 @@ int main(int argc, char **argv)
 }
 
 
-void refacet_surface( moab::EntityHandle surf, double A_f )
+void refacet_surface( moab::EntityHandle surf, double A_f, int valence )
 {
 
   //remove all 2-D entities on the surfce
@@ -79,9 +81,9 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
  
   //now its time to create an empty middle box using the remaining surface verts
   std::vector<moab::EntityHandle> box;
-  generate_box_space( surf, A_f, box);
+  generate_box_space( surf, A_f, box );
 
-  make_hv_region( surf, box, 10);
+  make_hv_region( surf, box, valence );
 
 
 }
