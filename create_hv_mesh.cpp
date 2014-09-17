@@ -21,6 +21,8 @@ MKCore *mk;
 void refacet_surface( moab::EntityHandle surf, double A_f );
 // returns the verts of an empty square in the center of the surface and surrounds this square w/ triangles in a watertight fashion
 void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts );
+// creates the triangles for the high-valence area
+void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> box_verts, int n );
 // returns a surface that is constant in Z
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf );
 // removes and deletes all triangles in the given surface
@@ -70,192 +72,10 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   std::vector<moab::EntityHandle> box;
   generate_box_space( surf, A_f, box);
 
+  //make_hv_region( surf, box, 10);
+
 
 }
-
-////// GENERATE BOX SPACE DIAGGRAM \\\\\\\\\\
-/*
-::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@`   `@.                                                                                                                                                                              .@.   ,@
-@@ `      :+                                                                                                                                                                        #:      ..@
-@@            ';                                                                                                                                                                ;'           #@
-@@    `          `@.                                                                                                                                                        ,#           `    @
-@@:    `             :+                                                                                                                                                 `#.             ,   ` @
-@@'     .                +:                                                                                                                                          +:                :    # @
-@@       ,                  .@.                                                   NORTH DAM TRIANGLE                                                             ;'                   '       @
-@@ ,      ;                     :+                                                                                                                           ,#`                     #        @
-@@ +       '                        +:                                                                                                                   `#,                        #      #  @
-@@          +                          .@.                                                                                                            ';                           #       `  @
-@@  .        #                             :+                                                                                                     :+                              '           @
-@@  +         #                                +:                                                                                             .@.                                :        #   @
-@@             #                                  .@.                                                                                      +:                                   .         .   @
-@@   `          +                                     :'                                                                               ;'                                      `              @
-@@   #           '                                        +:                                                                       ,#`                                       `           +    @
-@@                ;                                          .#`                                                               `#,                                          .            ,    @
-@@    `            :                                             ;'                                                         ';                                             ,                  @
-@@    @             ,                                                +:                                                 :+                                                ;             '     @
-@@    `              .                                                  .#`                                         .#`                                                  +              ,     @
-@@                    `                                                     ;'                                   #,                                                     #                     @
-@@     #                                                                        +:                           ';                                                        #               ;      @
-@@     `                 `                                                         .#`                   :+                                                           +                :      @
-@@                        `                                                            ;'            .#.                                                             ;                        @
-@@      +                  .                                                               +,     +:                                                                ,                 ;       @
-@@      .                   ,                                                                 .'                                                                   .                  ;       @
-@@                           :                                                               '. ;,                                                                `                           @
-@@       +                    '                                                           .'       #                                                            `                    :        @
-@@       ,                     +                                                        +`           ::                                                        .                     '        @
-@@                              #                                                    ,;                 #                                                     :                               @
-@@        '                      #                                                 #                      ,;                                                 '                      ,         @
-@@        :                       #                                             ,;                           #`                                             #                       +         @
-@@                                 #                                          #                                .'                                          #                                  @
-@@         ;                        +                                      ::                                     +`                                      #                        .          @
-@@         ;                         ;                                   #                                          `+                                   '                         #          @
-@@                                    :                               ;,                                               '.                               :                                     @
-@@          :                          ,                           `#                                                     #                            .                          `           @
-@@          '                           .                        '.                                                         ;,                        `                           #           @
-@@                                       `                    `+                                                               #                    `                                         @
-@@           ,                                              +`                                                                   ::                .                                          @
-@@           +                                           .'                                                                         #             ,                              @            @
-@@                                           `         #                                                                              ,;         ;                               `            @
-@@            .                               .     ,;                                                                                   #`     +                                             @
-@@            #                                ,  #                                                                                        .'  #                                #             @
-@@                                              @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@                                .             @
-@@             `                               .@                                                                                              +                                              @
-@@             #                               ;@                                                                                              +,                              +              @
-@@                                              @                                                                                              +:                              ,              @
-@@              `                             @ @                                                                                              +                                              @
-@@              @                               @                                                                                              + #                            '               @
-@@              `                            '  @                                                                                              +                              :               @
-@@                                           .  @                                                                                              +  +                                           @
-@@               #                          .   @                                                                                              +  `                          ;                @
-@@               .                          '   @                                                                                              +   ,                         ;                @
-@@                                              @                                                                                              +   ;                                          @
-@@                +                        #    @                                                                                              +                            :                 @
-@@                ,                             @                                                                                              +    #                       ;                 @
-@@                                        ;     @                                                                                              +                                              @
-@@                 '                      ,     @                                                                                              +     '                     :                  @
-@@                 ,                     `      @                                                                                              +     .                     '                  @
-@@                                       +      @                                                                                              +      .                                       @
-@@                  '                           @                                                                                              +      '                   ,                   @
-@@                  :                   #       @                                                                                              +                          +                   @
-@@                                              @                                                                                              +       #                                      @
-@@                   ;                 :        @                                                                                              +                         .                    @
-@@                   ;                 ,        @                                                                                              +        ;                #                    @
-@@                                    `         @                              EMPTY SQUARE (AREA = A_f * A_surface)                           +        .                                     @
-@@                    :               +         @                                                                                              +         `              `                     @
-@@                    '                         @                                                                                              +         '              @                     @
-@@                                   +          @                                                                                              +                        `                     @
-@@                     ,                        @                                                                                              +          #                                   @
-@@                     +            ,           @                                                                                              +                       @                      @
-@@                                  :           @                                                                                              +           :           `                      @
-@@                      .                       @                                                                                              +           ,                                  @
-@@                      #          #            @                                                                                              +            `         #                       @
-@@                                              @                                                                                              +            +         .                       @
-@@                       `        +             @                                                                                              +                                              @
-@@         W             @        `             @                                                                                              +             #       +             E          @
-@@         E                     ,              @                                                                                              +                     ,             A          @
-@@         S              `      ;              @                                                                                              +              :                    S          @
-@@         T              @                     @                                                                                              +              :     '              T          @
-@@                        `     #               @                                                                                              +                    :                         @
-@@         D                                    @                                                                                              +               #                   D          @
-@@         A               #   '                @                                                                                              +                   ;               A          @
-@@         M               .   `                @                                                                                              +                +  ;               M          @
-@@                            .                 @                                                                                              +                `                             @
-@@         T                + ;                 @                                                                                              +                 ,:                T          @
-@@         R                ,                   @                                                                                              +                 :'                R          @
-@@         I                 #                  @                                                                                              +                  .                I          @
-@@         A                 ;                  @                                                                                              +                 :#                A          @
-@@         N                ;.                  @                                                                                              +                 ,                 N          @
-@@         G                ; .                 @                                                                                              +                `  `               G          @
-@@         L                  ;                 @                                                                                              +                ;  @               L          @
-@@         E               :                    @                                                                                              +                                   E          @
-@@                         '   #                @                                                                                              +               #                              @
-@@                                              @                                                                                              +                    @                         @
-@@                        ,     #               @                                                                                              +              #     `                         @
-@@                        +                     @                                                                                              +                                              @
-@@                               '              @                                                                                              +             ;       #                        @
-@@                       .       `              @                                                                                              +             `       .                        @
-@@                       #        ,             @                                                                                              +            ,                                 @
-@@                                ,             @                                                                                              +            :         +                       @
-@@                      `          `            @                                                                                              +           `          ,                       @
-@@                      @          '            @                                                                                              +           +                                  @
-@@                                              @                                                                                              +                       '                      @
-@@                     `            #           @                                                                                              +          #            :                      @
-@@                     @                        @                                                                                              +                                              @
-@@                     `             +          @                                                                                              +         +              ;                     @
-@@                                              @                                                                                              +                        ;                     @
-@@                    #               ;         @                                                                                              +        :                                     @
-@@                    .               .         @                                                                                              +        ,                :                    @
-@@                                     .        @                                                                                              +       `                 '                    @
-@@                   +                 ;        @                                                                                              +       ;                                      @
-@@                   ,                          @                                                                                              +                          :                   @
-@@                                      +       @                                                                                              +      #                   '                   @
-@@                  '                           @                                                                                              +                                              @
-@@                  :                    #      @                                                                                              +     #                     ,                  @
-@@                                              @                                                                                              +                           +                  @
-@@                 ;                      '     @                                                                                              +    '                                         @
-@@                 :                      `     @                                                                                              +    `                       .                 @
-@@                                         ,    @                                                                                              +   ,                        #                 @
-@@                ;                        ,    @                                                                                              +   :                                          @
-@@                ;                         `   @                                                                                              +  `                          `                @
-@@                                          '   @                                                                                              +  +                          @                @
-@@               :                              @                                                                                              +                             `                @
-@@               '                           #  @                                                                                              + #                                            @
-@@                                              @                                                                                              +                              #               @
-@@              ,                             # @                                                                                              ++                             `               @
-@@              +                               @                                                                                              +                                              @
-@@                                             ;@                                                                                              #                               #              @
-@@             .                               .@                                                                                              +                               .              @
-@@             #                                @                                                                                             .+                                              @
-@@                                              @                                                                                              +                                +             @
-@@            `                               ` #@##########################################################################################@##'                                ,             @
-@@            @                              `     ::                                                                                    +`    .                                              @
-@@                                          .         #                                                                               .'        `                                '            @
-@@                                         ,            ,;                                                                          #`            `                              :            @
-@@           @                            ;                #                                                                     ,;                .                                          @
-@@           `                           '                   .'                                                                #                    :                             ;           @
-@@                                      +                       +`                                                          ::                       '                            ;           @
-@@          #                          #                          `+                                                      #                           #                                       @
-@@          .                         #                              '.                                                ;,                              #                           :          @
-@@                                   #                                 `#                                            #                                  #                          '          @
-@@         +                        #                                     ;,                                      ',                                     '                                    @
-@@         ,                       +                                         #                                 `+                                         :                         ,         @
-@@                                '                                            ;:                            '.                                            ,                        +         @
-@@        '                      :                                                #                       .+                                                `                                 @
-@@        :                     ,                                                   ::                  +`                                                                           .        @
-@@                             .                                                       #             .'                                                        `                     +        @
-@@       ;                    `                                                          ,;        #                                                            ,                             @
-@@       :                                                                                  #`  ,;                                                               ;                    .       @
-@@                         `                                                                  .                                                                   +                   #       @
-@@      :                 `                                                                ;'   .@.                                                                #                          @
-@@      ;                .                                                             .@`          :+                                                              #                  `      @
-@@                      ,                                                           +:                  ';                                                           +                 @      @
-@@     ,               :                                                        ;'                         `#,                                                        '                `      @
-@@     '              '                                                     .@.                                ,#`                                                     ,                      @
-@@                   +                                                   +:                                        ;'                                                   .               #     @
-@@    ,             #                                                :+                                                +:                                                `              `     @
-@@    +            #                                             .@.                                                      .@.                                              `                  @
-@@                #                                           +:                                                              :+                                            .            #    @
-@@   .           #                                        :+                                                                      ';                                         :           .    @
-@@   #          +                                     .@.                                                                            `#,                                      '               @
-@@             '                                   +:                                                                                    ,#`                                   #          +   @
-@@  `         :                                :+                                                                                            ;'                                 #         ,   @
-@@  #        ,                             .@.                                                                                                   +:                              #            @
-@@          .                           ';                                                                                                          `@.                           '        '  @
-@@         `                        :+                                             SOUTH DAM TRIANGLE                                                   ,#`                        :       :  @
-@@ #      `                     `@.                                                                                                                         ;'                      ,         @
-@@ `                         ';                                                                                                                                 #:                   `      ; @
-@@     `                 :+                                                                                                                                        .@.                      ; @
-@@#   .              `#,                                                                                                                                               :+               `     @
-@@.  ,            ';                                                                                                                                                       ';            ,   :@
-@@  :         :#                                                                                                                                                              `#,         ;  '@
-@@ ;      `#,                                                                                                                                                                     ,#`      +  @
-@@+    ';                                                                                                                                                                             ;'    # @
-@@ ,#                                                                                                                                                                                     +: #@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-*/
 
 
 // returns the verts of an empty box, centered on the origin which is surrounded by triangles
@@ -409,6 +229,7 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
   //add these to the surface
   mk->moab_instance()->add_entities( surf, &(dam_tris[0]), dam_tris.size() );
 
+  
   //re-order the M verts
   std::vector<moab::EntityHandle> ordered_box(4);
   for(unsigned int i = 0; i < box.size() ; i++)
@@ -425,11 +246,10 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
     }
 
   box_verts = ordered_box;
-  
   //now that the middle box is ordered we can add the triangles that 
   //connect the dams to to the box
 
-  box_verts.push_back(box[0]); // psuedo-loop to make creating these tris easier
+  box_verts.push_back(box_verts[0]); // psuedo-loop to make creating these tris easier
   moab::EntityHandle all_dam_verts[4] = { wdv, ndv, edv, sdv };
   std::vector<moab::EntityHandle> last_few_tris(4);
 
@@ -443,7 +263,70 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
   //now add these to the surface
   mk->moab_instance()->add_entities( surf, &last_few_tris[0], 4);
 
+  box_verts = ordered_box;
+  
+} // end generate_box_space
+
+//creates a watertight high-valence area with n-valencies per
+void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> box_verts, int n ) 
+{
+
+  //start by making a paramaterization of the box diagonal
+  
+  //because we know the order of these verts, we can get the diagonal coordinates directly
+  MBCartVect sw_coords, ne_coords;
+
+  mk->moab_instance()->get_coords( &box_verts[0], 1, sw_coords.array() );
+  mk->moab_instance()->get_coords( &box_verts[2], 1, ne_coords.array() );
+
+  //now create the param vector
+  MBCartVect sw_to_ne = ne_coords-sw_coords;
+
+  // now, based on the valence asked for, get the new vertex coords long this line
+  std::vector<moab::EntityHandle> diag_verts;
+ 
+
+  for(unsigned int i = 1; i < n-2; i++)
+    {
+      double u = i/n;
+      MBCartVect new_coords = sw_coords + u*sw_to_ne;
+      moab::EntityHandle new_vert;
+      mk->moab_instance()->create_vertex( new_coords.array(), new_vert);
+      diag_verts.push_back(new_vert);
+    }
+
+  //add all of these new verts to the surface
+  mk->moab_instance()->add_entities( surf, &(diag_verts[0]), diag_verts.size() );
+
+
+  // put the box verts at the front and end
+  diag_verts.insert( diag_verts.begin(), box_verts[0] );
+  diag_verts.push_back( box_verts[2]);
+
+ 
+  //now create the new triangles
+  //each segment along the diagonal will will have two tris
+  //one to the nw vert and one to the se vert
+
+  moab::EntityHandle nw_vert = box_verts[1];
+  moab::EntityHandle se_vert = box_verts[3];
+  for(unsigned int i = 0; i < diag_verts.size()-1; i++)
+    {
+     
+      moab::EntityHandle tri1, tri2;
+      //creating new tris
+      moab::EntityHandle tri1_verts[3] = { nw_vert, diag_verts[i], diag_verts[i+1] };
+      moab::EntityHandle tri2_verts[3] = { se_vert, diag_verts[i], diag_verts[i+1] };
+      mk->moab_instance()->create_element( MBTRI, &tri1_verts[0], 3, tri1);
+      mk->moab_instance()->create_element( MBTRI, &tri2_verts[0], 3, tri2);
+
+      //now add these to the surface set
+      mk->moab_instance()->add_entities( surf, &tri1, 1);
+      mk->moab_instance()->add_entities( surf, &tri2, 1);
+    }
+  
 }
+
 
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
 {
