@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 {
 
   //temp value of A_f, the fraction of the total surface area claimed
-  //by high valencies
+  //by high valencies. this will be passed by argument eventually
   double A_f = 0.2;
 
   mk = new MKCore();
@@ -80,16 +80,24 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   double hv_side = sqrt(hv_area);
 
   //get the move distance for the given area. 
-  double box_bump_dist = 0.5*(surface_side - hv_side);
-  double dam_bump_short = 0.25*(surface_side - hv_side);
-  double dam_bump_long = 0.5*surface_side;
+  double box_bump_dist = 0.5 * (surface_side - hv_side);
+  double dam_bump_short = 0.25 * (surface_side - hv_side);
+  double dam_bump_long = 0.5 * surface_side;
 
   //vectors for the dam nodes and the inner vert points
   
-  std::vector<moab::EntityHandle> nd /*north dam tri verts*/, sd /*south dam tri verts*/, ed /*east dam tri verts*/, wd /*west dam tri verts*/; 
-  moab::EntityHandle ndv /*north dam vertex*/, sdv /*south dam vertex*/, edv /*east dam vertex*/, wdv /*west dam vertex*/; 
+  std::vector<moab::EntityHandle> 
+    nd, /*north dam tri verts*/ 
+    sd, /*south dam tri verts*/ 
+    ed, /*east dam tri verts*/ 
+    wd; /*west dam tri verts*/ 
+  moab::EntityHandle 
+    ndv, /*north dam vertex*/ 
+    sdv, /*south dam vertex*/ 
+    edv, /*east dam vertex*/ 
+    wdv; /*west dam vertex*/
 
-  std::vector<moab::EntityHandle> box;
+  std::vector<moab::EntityHandle> box; /* inner box vert list */
 
 
   //loop over the original verts (corners) and create the needed vertices
@@ -215,7 +223,7 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
       MBCartVect v_coords;
       mk->moab_instance()->get_coords( &(box[i]), 1, v_coords.array() );
       double x = v_coords[0]; double y = v_coords[1];
-
+      // again, our surface is cenetered on the origin
       if ( x < 0 && y < 0) new_box[0] = box[i];
       else if ( x < 0 && y > 0) new_box[1] = box[i];
       else if ( x > 0 && y > 0) new_box[2] = box[i];
@@ -234,6 +242,7 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   moab::EntityHandle all_dam_verts[4] = { wdv, ndv, edv, sdv };
   std::vector<moab::EntityHandle> last_few_tris(4);
 
+  //create the box triangles (for now)
   for(unsigned int i = 0; i < last_few_tris.size(); i++)
     {
       moab::EntityHandle tri_verts[3] = { box[i], all_dam_verts[i], box[i+1] };
@@ -243,121 +252,7 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   //now add these to the surface
   mk->moab_instance()->add_entities( surf, &last_few_tris[0], 4);
 
-  //all of the verts we need for these tris should already be in the surface,
-  //so just add the tris
-  // mk->moab_instance()->add_entities( surf, &(dam_tris[0]), dam_tris.size());
-
-
-
-    /*
-  // Box lists (the corner boxes are created with the new verts)  
-  std::vector<moab::EntityHandle> L,R,M,T,B;
-  // Curve Lists (this is where we'll place the new curve verts)
-  std::vector<moab::EntityHandle> N,S,E,W;
-  //start creating new verts and adding them to the appropriate lists
-
-  //create the new areas on this surface
-  for(std::vector<moab::EntityHandle>::iterator i = orig_verts.begin(); i!=orig_verts.end(); i++)
-    {
-      MBCartVect coords;
-      mk->moab_instance()->get_coords( &(*i), 1, coords.array() );
-
-      //create new vertex vectors
-      double x_dist, y_dist;
-      if( coords[0] < 0 ) x_dist = bump_dist; else x_dist = -bump_dist;
-      if( coords[1] < 0 ) y_dist = bump_dist; else y_dist = -bump_dist;
-
-      MBCartVect x_only, y_only, x_n_y;
-      x_only[0]= x_dist; x_only[1] = 0; x_only[2] = 0;
-      y_only[0]= 0; y_only[1] = y_dist; y_only[2] = 0;
-      x_n_y[0] = x_dist; x_n_y[1] = y_dist; x_n_y[2] = 0;
-
-      //now create new verts at each of these points
-      moab::EntityHandle x,y,xy;
-      mk->moab_instance()->create_vertex( (coords+x_only).array(), x);
-      mk->moab_instance()->create_vertex( (coords+y_only).array(), y);
-      mk->moab_instance()->create_vertex( (coords+x_n_y).array(), xy);
-
-      //add the xy vert into the MM set...
-      M.push_back(xy);
-
-      // select the proper box to add to based on the corner point we're expanding from      
-      std::vector<moab::EntityHandle> *y_box = &L, *x_box= &T; //dummy setting for the pointers
-      if( coords[0] < 0 ) y_box = &L; else y_box = &R;
-      if( coords[1] < 0 ) x_box = &B; else x_box = &T;
-
-      // if there are no verts in the list, add xy then y, if verts exist, add y first instead
-      if( y_box->size() != 0 ) { y_box->push_back(xy); y_box->push_back(y); }
-      else { y_box->push_back(y); y_box->push_back(xy); }
-      // same as above but for the x-adj box
-      if( x_box->size() != 0 ) { x_box->push_back(xy); x_box->push_back(x); }
-      else { x_box->push_back(x); x_box->push_back(xy); }
-      
-
-      // this is a similar process as above, but for creating the new curve data
-      std::vector<moab::EntityHandle> *y_curve = &W, *x_curve = &S;
-      if( coords[0] < 0 ) y_curve = &W; else y_curve = &E;
-      if( coords[1] < 0 ) x_curve = &S; else x_curve = &N;
-
-      if( y_curve->size() != 0 ) { y_curve->push_back(y); y_curve->push_back(*i); }
-      else { y_curve->push_back(*i); y_curve->push_back(y); }
-
-      if( x_curve->size() != 0 ) { x_curve->push_back(x); x_curve->push_back(*i); }
-      else { x_curve->push_back(*i); x_curve->push_back(x); }
-      
-      //create a new quad here (for now)
-      std::vector<moab::EntityHandle> quad_verts(4);
-      quad_verts[0] =  x;
-      quad_verts[1] =  xy;
-      quad_verts[2] =  y;
-      quad_verts[3] =  *i;
-
-      moab::EntityHandle new_quad;
-      add_box_to_surf( surf, quad_verts);
-
-    }
-
-  //create the L box
-  add_box_to_surf( surf, L);
-  //create the T box
-  add_box_to_surf( surf, T);
-  //create the R box
-  add_box_to_surf( surf, R);
-  //create the B box
-  add_box_to_surf( surf, B);
-
-
-  //re-order the M verts
-  std::vector<moab::EntityHandle> new_M(4);
-  for(unsigned int i = 0; i < M.size() ; i++)
-    {
-
-      MBCartVect v_coords;
-      mk->moab_instance()->get_coords( &(M[i]), 1, v_coords.array() );
-      double x = v_coords[0]; double y = v_coords[1];
-
-      if ( x < 0 && y < 0) new_M[0] = M[i];
-      else if ( x < 0 && y > 0) new_M[1] = M[i];
-      else if ( x > 0 && y > 0) new_M[2] = M[i];
-      else if ( x > 0 && y < 0) new_M[3] = M[i];
-    }
-
-  M = new_M;
-  
-  //create the middle box
-  add_box_to_surf( surf, M);
-
-  //replace the old curves with the new ones
-  std::vector<moab::EntityHandle> curves;
-  mk->moab_instance()->get_child_meshsets( surf, curves);
-  std::vector<std::vector<moab::EntityHandle> > new_curve_verts;
-  new_curve_verts.push_back(N);   new_curve_verts.push_back(S);
-  new_curve_verts.push_back(E);   new_curve_verts.push_back(W);
-
-  replace_curves( curves, new_curve_verts);
-    */
 }
-
 
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
 {
@@ -395,7 +290,6 @@ void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
     } //end loop  
 }
 
-
 void tear_down_surface( moab::EntityHandle surf)
 {
 
@@ -414,8 +308,6 @@ void tear_down_surface( moab::EntityHandle surf)
   std::cout << "There are now " << test_tris.size() << " triangles in the model" << std::endl;
 
 }
-
-
 
 double polygon_area( std::vector<moab::EntityHandle> verts)
 {
@@ -468,44 +360,3 @@ void add_box_to_surf( moab::EntityHandle surf, std::vector<moab::EntityHandle> v
 
 }
 
-void replace_curves( std::vector<moab::EntityHandle> orig_curves, std::vector<std::vector<moab::EntityHandle> > new_curve_verts)
-{
-  
-  int matches = 0;
-  //for each original curve, get the verts and see if there is a match for the beginning and end points
-  for(std::vector<moab::EntityHandle>::iterator i = orig_curves.begin(); i != orig_curves.end(); i++)
-    {
-      
-      //get the curve verts
-      std::vector<moab::EntityHandle> orig_curve_verts;
-      mk->moab_instance()->get_entities_by_type( *i, MBVERTEX, orig_curve_verts);
-
-      for(std::vector<std::vector<moab::EntityHandle> >::iterator j = new_curve_verts.begin();  j != new_curve_verts.end(); j++)
-	{
-	  //look for a match 
-	  bool match = false;
-	  std::vector<moab::EntityHandle> these_verts= *j;
-	  if( orig_curve_verts.front() == these_verts.front() && orig_curve_verts.back() == these_verts.back() )
-	    match = true;
-	  //check the reverse sense in case the vert orders are just backwards
-	  if( orig_curve_verts.back() == these_verts.front() && orig_curve_verts.front() == these_verts.back() )
-	    {
-	      std::reverse(these_verts.begin(), these_verts.end());
-	      match = true;
-	    }
-
-	  //if we have a match we will clear-out the meshset
-	  //and add the new verts to replace the previous curve
-	  if(match)
-	    {
-	      matches++;
-	      mk->moab_instance()->clear_meshset( &(*i), 1);
-	      mk->moab_instance()->add_entities( *i, &(these_verts[0]), these_verts.size());
-	      
-	    }
-	  else continue;
-	} // new curve verts loop
-    }// orig curves loop
-
-  if(matches != 4) std::cout << "Warning: Not all curves were replaced successfully!" << std::endl;
-}
