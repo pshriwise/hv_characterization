@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 
   //temp value of A_f, the fraction of the total surface area claimed
   //by high valencies
-  double A_f = 0.4;
+  double A_f = 0.2;
 
   mk = new MKCore();
   
@@ -203,6 +203,27 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   mk->moab_instance()->create_element( MBTRI, &(sd[0]), sd.size(), dam_tris[1]);
   mk->moab_instance()->create_element( MBTRI, &(ed[0]), ed.size(), dam_tris[2]);
   mk->moab_instance()->create_element( MBTRI, &(wd[0]), wd.size(), dam_tris[3]);
+
+  //re-order the M verts
+  std::vector<moab::EntityHandle> new_box(4);
+  for(unsigned int i = 0; i < box.size() ; i++)
+    {
+
+      MBCartVect v_coords;
+      mk->moab_instance()->get_coords( &(box[i]), 1, v_coords.array() );
+      double x = v_coords[0]; double y = v_coords[1];
+
+      if ( x < 0 && y < 0) new_box[0] = box[i];
+      else if ( x < 0 && y > 0) new_box[1] = box[i];
+      else if ( x > 0 && y > 0) new_box[2] = box[i];
+      else if ( x > 0 && y < 0) new_box[3] = box[i];
+    }
+
+  box = new_box;
+  
+  //create the middle box
+  add_box_to_surf( surf, box);
+
 
   //all of the verts we need for these tris should already be in the surface,
   //so just add the tris
