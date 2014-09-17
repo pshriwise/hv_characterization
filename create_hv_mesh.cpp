@@ -72,7 +72,7 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   std::vector<moab::EntityHandle> box;
   generate_box_space( surf, A_f, box);
 
-  //make_hv_region( surf, box, 10);
+  make_hv_region( surf, box, 10);
 
 
 }
@@ -286,9 +286,9 @@ void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> bo
   std::vector<moab::EntityHandle> diag_verts;
  
 
-  for(unsigned int i = 1; i < n-2; i++)
+  for(unsigned int i = 1; i <= n-1; i++)
     {
-      double u = i/n;
+      double u = double(i)/double(n);
       MBCartVect new_coords = sw_coords + u*sw_to_ne;
       moab::EntityHandle new_vert;
       mk->moab_instance()->create_vertex( new_coords.array(), new_vert);
