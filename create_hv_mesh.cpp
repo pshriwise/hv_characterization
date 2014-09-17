@@ -80,37 +80,123 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   double hv_side = sqrt(hv_area);
 
   //get the move distance for the given area. 
-  double bump_dist = 0.5*(surface_side - hv_side);
-  /*
-                    //  NEW SURFACE DESIGN  \\
+  double box_bump_dist = 0.5*(surface_side - hv_side);
+  double dam_bump_short = 0.25*(surface_side - hv_side);
+  double dam_bump_long = 0.5*surface_side;
 
-                          North Curve
-   //////////////////////////////////////////////////////////////
-   //              //                        //                //
-   //              //                        //                //
-   //              //            U           //                //
-   //              //                        //                //
-   //              //                        //                //
- W ////////////////////////////////////////////////////////////// E
- e //              //                        //                // a
- s //              //                        //                // s
- t //              //                        //                // t
-   //              //                        //                //
- C //      L       //           M            //       R        // C
- u //              //                        //                // u
- r //              //                        //                // r
- v //              //                        //                // v
- e //              //                        //                // e
-   //////////////////////////////////////////////////////////////
-   //              //                        //                //
-   //              //                        //                //
-   //              //           B            //                //
-   //              //                        //                //
-   //              //                        //                //
-   //////////////////////////////////////////////////////////////
-                           South Curve
-  */
+  //vectors for the dam nodes and the inner vert points
+  
+  std::vector<moab::EntityHandle> nd /*north dam tri verts*/, sd /*south dam tri verts*/, ed /*east dam tri verts*/, wd /*west dam tri verts*/; 
+  moab::EntityHandle ndv /*north dam vertex*/, sdv /*south dam vertex*/, edv /*east dam vertex*/, wdv /*west dam vertex*/; 
 
+  std::vector<moab::EntityHandle> box;
+
+
+  //loop over the original verts (corners) and create the needed vertices
+  for(std::vector<moab::EntityHandle>::iterator i=orig_verts.begin(); i!=orig_verts.end(); i++)
+    {
+      //first get the coordinates of this corner
+      MBCartVect coords;
+      mk->moab_instance()->get_coords( &(*i), 1, coords.array() );
+      
+      //need three cartesian vectors telling us where to put the verts, two for the dam points, one for the inner point.
+      MBCartVect to_ewdam, to_nsdam, to_box;
+      to_ewdam[2] = 0; to_nsdam[2] = 0; to_box[2] = 0; //only moving on the x-y plane here
+      
+      //always want to create this vert
+      //using the fact that we're centered on the origin here...
+      //x-points
+      if( coords[0] < 0 ){ 
+	to_box[0] = box_bump_dist; }
+      else  { 
+	to_box[0] = -box_bump_dist; }
+      //y-points
+      if( coords[1] < 0 ){ 
+	to_box[1]=box_bump_dist; }
+      else  { 
+	to_box[1] = -box_bump_dist; }
+
+      //create the inner point
+      moab::EntityHandle box_vert;
+      mk->moab_instance()->create_vertex( (coords+to_box).array(), box_vert);
+      box.push_back(box_vert);
+      
+
+      //figure out which dams we're adjacent to
+      std::vector<moab::EntityHandle> *nsdam = &nd, *ewdam = &ed;
+      moab::EntityHandle *nsdam_vert = &ndv, *ewdam_vert = &edv;
+
+      //set the north-south dam based on our y location
+      if( coords[1] < 0) { nsdam_vert = &sdv; nsdam = &sd; }
+      else { nsdam_vert = &ndv; nsdam = &nd; }
+
+      //set the east-west dam based on our x location
+      if( coords[0] < 0) { ewdam_vert = &wdv; ewdam = &wd; }
+      else { ewdam_vert = &edv; ewdam = &ed; }
+
+      //////NORTH-SOUTH DAM\\\\\\\
+
+      //if the dams already have info from another corner, no need to create it's point,
+      //just add this corner to the dam triangle
+      if( 0 != nsdam->size() && NULL != nsdam_vert ) { nsdam->push_back(*i); }
+      // if the dam has no info, then we'll create it
+      else {
+	
+	//set the dam coordinates
+	if ( coords[0] < 0 ) to_nsdam[0] = dam_bump_long;
+	else to_nsdam[0] = -dam_bump_long;
+	if ( coords[1] < 0 ) to_nsdam[1] = dam_bump_short;
+	else to_nsdam[1] = -dam_bump_short;
+
+	//create the dam vertex 
+	mk->moab_instance()->create_vertex( (coords+to_nsdam).array(), *nsdam_vert);
+	
+	//now add this corner and the dam vert to the dam verts list
+	nsdam->push_back(*nsdam_vert); nsdam->push_back(*i);
+
+      } 
+	
+      //////EAST-WEST DAM\\\\\\\
+
+      //if the dams already have info from another corner, no need to create it's point,
+      //just add this corner to the dam triangle
+      if( 0 != ewdam->size() && NULL != ewdam_vert ) { ewdam->push_back(*i); }
+      // if the dam has no info, then we'll create it
+      else {
+	
+	//set the dam coordinates
+	if ( coords[0] < 0 ) to_ewdam[0] = dam_bump_short;
+	else to_ewdam[0] = -dam_bump_short;
+	if ( coords[1] < 0 ) to_ewdam[1] = dam_bump_long;
+	else to_ewdam[1] = -dam_bump_long;
+
+	//create the dam vertex 
+	mk->moab_instance()->create_vertex( (coords+to_ewdam).array(), *ewdam_vert);
+	
+	//now add this corner and the dam vert to the dam verts list
+	nsdam->push_back(*ewdam_vert); ewdam->push_back(*i);
+
+      } 
+	
+      
+      //dam info should now all be set
+
+      //there are always two triangles to create that connect the dam
+      //to the corner, we'll do that now
+      moab::EntityHandle tri_verts[4] = { *ewdam_vert, *i, box_vert, *nsdam_vert  };
+      std::vector<moab::EntityHandle> tris(2);
+      mk->moab_instance()->create_element( MBTRI, &tri_verts[0], 3, tris[0] );
+      mk->moab_instance()->create_element( MBTRI, &tri_verts[1], 3, tris[1] );
+      
+      //now we'll add these to the set
+      mk->moab_instance()->add_entities( surf, &tri_verts[0], 4 );
+      mk->moab_instance()->add_entities( surf, &(tris[0]), tris.size() );
+
+      
+      
+    }
+
+    /*
   // Box lists (the corner boxes are created with the new verts)  
   std::vector<moab::EntityHandle> L,R,M,T,B;
   // Curve Lists (this is where we'll place the new curve verts)
@@ -216,7 +302,7 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   new_curve_verts.push_back(E);   new_curve_verts.push_back(W);
 
   replace_curves( curves, new_curve_verts);
-
+    */
 }
 
 
