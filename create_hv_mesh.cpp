@@ -33,9 +33,18 @@ double polygon_area( std::vector<moab::EntityHandle> verts );
 int main(int argc, char **argv)
 {
 
-  //temp value of A_f, the fraction of the total surface area claimed
-  //by high valencies. this will be passed by argument eventually
-  double A_f = 0.2;
+  if( 3 != argc  ) 
+    {
+      std::cout << "Please include all necessary arguments! Exiting..." << std::endl;
+      std::cout << "To generate a high valence region with area fraction A_f (double) and verts of valency n:" << std::endl;
+      std::cout << "$ ./create_hv_mesh <A_f> <n>" << std::endl;
+      return 0;
+    }
+
+  double A_f = atof(argv[1]);
+  //make sure the input of A_f is valid
+  if( 1 <= A_f ){ std::cout << "Area fraction A_f must be less than 1." << std::endl; return 0; }
+  int n = atoi(argv[2]);
 
   mk = new MKCore();
   
