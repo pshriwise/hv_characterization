@@ -174,7 +174,7 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
 	mk->moab_instance()->create_vertex( (coords+to_ewdam).array(), *ewdam_vert);
 	
 	//now add this corner and the dam vert to the dam verts list
-	nsdam->push_back(*ewdam_vert); ewdam->push_back(*i);
+	ewdam->push_back(*ewdam_vert); ewdam->push_back(*i);
 
       } 
 	
@@ -195,6 +195,20 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
       
       
     }
+
+  //now we should have all of the info needed to create our dam triangles
+  std::vector<moab::EntityHandle> dam_tris(4);
+  assert( nd.size()==3 );
+  mk->moab_instance()->create_element( MBTRI, &(nd[0]), nd.size(), dam_tris[0]);
+  mk->moab_instance()->create_element( MBTRI, &(sd[0]), sd.size(), dam_tris[1]);
+  mk->moab_instance()->create_element( MBTRI, &(ed[0]), ed.size(), dam_tris[2]);
+  mk->moab_instance()->create_element( MBTRI, &(wd[0]), wd.size(), dam_tris[3]);
+
+  //all of the verts we need for these tris should already be in the surface,
+  //so just add the tris
+  // mk->moab_instance()->add_entities( surf, &(dam_tris[0]), dam_tris.size());
+
+
 
     /*
   // Box lists (the corner boxes are created with the new verts)  
