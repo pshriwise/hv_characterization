@@ -56,14 +56,9 @@ int main(int argc, char **argv)
 
 }
 
-void refacet_surface( moab::EntityHandle surf, double A_f )
+void create_box( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts )
 {
 
-  //remove all 2-D entities on the surfce
-  tear_down_surface( surf );
-
- 
-  //now its time to create new boxes using the remaining surface verts
   std::vector<moab::EntityHandle> corners;
   mk->moab_instance()->get_entities_by_type( surf, MBVERTEX, corners );
 
@@ -186,7 +181,6 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
 
       } 
 	
-      
       //dam info should now all be set
 
       //there are always two triangles to create that connect the dam
@@ -216,7 +210,7 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   mk->moab_instance()->add_entities( surf, &(dam_tris[0]), dam_tris.size() );
 
   //re-order the M verts
-  std::vector<moab::EntityHandle> new_box(4);
+  std::vector<moab::EntityHandle> ordered_box(4);
   for(unsigned int i = 0; i < box.size() ; i++)
     {
 
@@ -224,33 +218,44 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
       mk->moab_instance()->get_coords( &(box[i]), 1, v_coords.array() );
       double x = v_coords[0]; double y = v_coords[1];
       // again, our surface is cenetered on the origin
-      if ( x < 0 && y < 0) new_box[0] = box[i];
-      else if ( x < 0 && y > 0) new_box[1] = box[i];
-      else if ( x > 0 && y > 0) new_box[2] = box[i];
-      else if ( x > 0 && y < 0) new_box[3] = box[i];
+      if ( x < 0 && y < 0) ordered_box[0] = box[i];
+      else if ( x < 0 && y > 0) ordered_box[1] = box[i];
+      else if ( x > 0 && y > 0) ordered_box[2] = box[i];
+      else if ( x > 0 && y < 0) ordered_box[3] = box[i];
     }
 
-  box = new_box;
+  box_verts = ordered_box;
   
-  //create the middle box
-  add_box_to_surf( surf, box);
-
   //now that the middle box is ordered we can add the triangles that 
   //connect the dams to to the box
 
-  box.push_back(box[0]); // psuedo-loop to make creating these tris easier
+  box_verts.push_back(box[0]); // psuedo-loop to make creating these tris easier
   moab::EntityHandle all_dam_verts[4] = { wdv, ndv, edv, sdv };
   std::vector<moab::EntityHandle> last_few_tris(4);
 
-  //create the box triangles (for now)
+  //create triangle that connect the box to the dams
   for(unsigned int i = 0; i < last_few_tris.size(); i++)
     {
-      moab::EntityHandle tri_verts[3] = { box[i], all_dam_verts[i], box[i+1] };
+      moab::EntityHandle tri_verts[3] = { box_verts[i], all_dam_verts[i], box_verts[i+1] };
       mk->moab_instance()->create_element( MBTRI, &(tri_verts[0]), 3, last_few_tris[i]);
     }
       
   //now add these to the surface
   mk->moab_instance()->add_entities( surf, &last_few_tris[0], 4);
+
+}
+
+void refacet_surface( moab::EntityHandle surf, double A_f )
+{
+
+  //remove all 2-D entities on the surfce
+  tear_down_surface( surf );
+
+ 
+  //now its time to create an empty middle box using the remaining surface verts
+  std::vector<moab::EntityHandle> box;
+  create_box( surf, A_f, box);
+
 
 }
 
