@@ -204,6 +204,9 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   mk->moab_instance()->create_element( MBTRI, &(ed[0]), ed.size(), dam_tris[2]);
   mk->moab_instance()->create_element( MBTRI, &(wd[0]), wd.size(), dam_tris[3]);
 
+  //add these to the surface
+  mk->moab_instance()->add_entities( surf, &(dam_tris[0]), dam_tris.size() );
+
   //re-order the M verts
   std::vector<moab::EntityHandle> new_box(4);
   for(unsigned int i = 0; i < box.size() ; i++)
