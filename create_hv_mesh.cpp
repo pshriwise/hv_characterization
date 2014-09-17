@@ -17,14 +17,18 @@ using namespace MeshKit;
 
 MKCore *mk;
 
-
+// creates new facets for the square surface (in const Z-plane) with a high-valence region of size A_f*(surface_area) and a valency of n
 void refacet_surface( moab::EntityHandle surf, double A_f );
+// returns the verts of an empty square in the center of the surface and surrounds this square w/ triangles in a watertight fashion
+void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts );
+// returns a surface that is constant in Z
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf);
+// removes and deletes all triangles in the given surface
 void tear_down_surface( moab::EntityHandle surf );
+// returns the area of a polygon given the ordered verts
 double polygon_area( std::vector<moab::EntityHandle> verts);
-//assumes verts are in the proper order
-void add_box_to_surf( moab::EntityHandle surf, std::vector<moab::EntityHandle> verts);
-void replace_curves( std::vector<moab::EntityHandle> orig_curves, std::vector<std::vector<moab::EntityHandle> > new_curve_verts);
+
+
   
 int main(int argc, char **argv)
 {
@@ -56,7 +60,24 @@ int main(int argc, char **argv)
 
 }
 
-void create_box( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts )
+
+void refacet_surface( moab::EntityHandle surf, double A_f )
+{
+
+  //remove all 2-D entities on the surfce
+  tear_down_surface( surf );
+
+ 
+  //now its time to create an empty middle box using the remaining surface verts
+  std::vector<moab::EntityHandle> box;
+  generate_box_space( surf, A_f, box);
+
+
+}
+
+
+// returns the verts of an empty box, centered on the origin which is surrounded by triangles
+void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts )
 {
 
   std::vector<moab::EntityHandle> corners;
@@ -193,9 +214,6 @@ void create_box( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHa
       //now we'll add these to the set
       mk->moab_instance()->add_entities( surf, &tri_verts[0], 4 );
       mk->moab_instance()->add_entities( surf, &(tris[0]), tris.size() );
-
-      
-      
     }
 
   //now we should have all of the info needed to create our dam triangles
@@ -242,20 +260,6 @@ void create_box( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHa
       
   //now add these to the surface
   mk->moab_instance()->add_entities( surf, &last_few_tris[0], 4);
-
-}
-
-void refacet_surface( moab::EntityHandle surf, double A_f )
-{
-
-  //remove all 2-D entities on the surfce
-  tear_down_surface( surf );
-
- 
-  //now its time to create an empty middle box using the remaining surface verts
-  std::vector<moab::EntityHandle> box;
-  create_box( surf, A_f, box);
-
 
 }
 
@@ -345,23 +349,5 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
   //std::cout << "The total area of this polygon is: " << poly_area << std::endl;
   
   return poly_area;
-}
-
-//assumes verts are in the proper order
-void add_box_to_surf( moab::EntityHandle surf, std::vector<moab::EntityHandle> verts)
-{
-  
-  //create some storage for the triangles
-  std::vector<moab::EntityHandle> tris(2);
-  //create an psuedo-wrap in the vector to make triangle creation easy
-  verts.push_back(verts[0]); //verts.push_back(verts[2]);
-
-  //now create the new triangles and add everything to the surface set
-  mk->moab_instance()->create_element( MBTRI, &(verts[0]), 3, tris[0]);
-  mk->moab_instance()->create_element( MBTRI, &(verts[2]), 3, tris[1]);
-
-  mk->moab_instance()->add_entities( surf, &(verts[0]), 4);
-  mk->moab_instance()->add_entities( surf, &(tris[0]), 2);
-
 }
 
