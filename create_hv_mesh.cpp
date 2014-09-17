@@ -22,11 +22,11 @@ void refacet_surface( moab::EntityHandle surf, double A_f );
 // returns the verts of an empty square in the center of the surface and surrounds this square w/ triangles in a watertight fashion
 void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts );
 // returns a surface that is constant in Z
-void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf);
+void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf );
 // removes and deletes all triangles in the given surface
 void tear_down_surface( moab::EntityHandle surf );
 // returns the area of a polygon given the ordered verts
-double polygon_area( std::vector<moab::EntityHandle> verts);
+double polygon_area( std::vector<moab::EntityHandle> verts );
 
 
   
