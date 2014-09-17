@@ -224,6 +224,21 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
   //create the middle box
   add_box_to_surf( surf, box);
 
+  //now that the middle box is ordered we can add the triangles that 
+  //connect the dams to to the box
+
+  box.push_back(box[0]); // psuedo-loop to make creating these tris easier
+  moab::EntityHandle all_dam_verts[4] = { wdv, ndv, edv, sdv };
+  std::vector<moab::EntityHandle> last_few_tris(4);
+
+  for(unsigned int i = 0; i < last_few_tris.size(); i++)
+    {
+      moab::EntityHandle tri_verts[3] = { box[i], all_dam_verts[i], box[i+1] };
+      mk->moab_instance()->create_element( MBTRI, &(tri_verts[0]), 3, last_few_tris[i]);
+    }
+      
+  //now add these to the surface
+  mk->moab_instance()->add_entities( surf, &last_few_tris[0], 4);
 
   //all of the verts we need for these tris should already be in the surface,
   //so just add the tris
