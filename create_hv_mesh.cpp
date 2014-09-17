@@ -64,10 +64,10 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
 
  
   //now its time to create new boxes using the remaining surface verts
-  std::vector<moab::EntityHandle> orig_verts;
-  mk->moab_instance()->get_entities_by_type( surf, MBVERTEX, orig_verts);
+  std::vector<moab::EntityHandle> corners;
+  mk->moab_instance()->get_entities_by_type( surf, MBVERTEX, corners );
 
-  double surface_area = polygon_area( orig_verts );
+  double surface_area = polygon_area( corners );
   //going to start taking advantage of knowing the geometry here...
   double surface_side = sqrt(surface_area);
   double cube_area = 6*surface_area;
@@ -101,7 +101,7 @@ void refacet_surface( moab::EntityHandle surf, double A_f )
 
 
   //loop over the original verts (corners) and create the needed vertices
-  for(std::vector<moab::EntityHandle>::iterator i=orig_verts.begin(); i!=orig_verts.end(); i++)
+  for(std::vector<moab::EntityHandle>::iterator i=corners.begin(); i!=corners.end(); i++)
     {
       //first get the coordinates of this corner
       MBCartVect coords;
