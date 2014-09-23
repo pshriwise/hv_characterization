@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <ctime>
 #include <sstream>
 #include <iomanip> 
 #include <limits> 
@@ -100,10 +101,16 @@ int main(int argc, char **argv)
   moab::DagMC::RayHistory ray_hist; 
   moab::OrientedBoxTreeTool::TrvStats ray_stats;
   
+
+  std::clock_t start_time, end_time;
+
   //fire the ray
+  start_time = std::clock();
   result = dag->ray_fire( vol, start, ray_vec, dummy_handle, dummy_doub, &ray_hist, 0, 1, &ray_stats);
+  end_time = std::clock();
   if( MB_SUCCESS != result) return 1;  
 
+  std::cout << "The ray fire took " << (end_time - start_time) / (double)(CLOCKS_PER_SEC / 1000)  << " ms." << std::endl;
   
   return 0;
 
