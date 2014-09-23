@@ -13,6 +13,7 @@
 #include "gen.hpp"
 #include "../src/tools/measure.hpp"
 #include "DagMC.hpp"
+#include "moab/OrientedBoxTreeTool.hpp"
 
 using namespace MeshKit;
 
@@ -72,11 +73,14 @@ int main(int argc, char **argv)
   //now we'll try to load this mesh-file into a dagmc instance
   moab::DagMC *dag = moab::DagMC::instance();
 
+  moab::ErrorCode result;
   //try loading the file 
-  dag->load_file( "cube_mod.h5m" );
+  result = dag->load_file( "cube_mod.h5m" );
+  if( MB_SUCCESS != result) return 1;
 
   //generate the OBB tree
-  dag->init_OBBTree();
+  result = dag->init_OBBTree();
+  if( MB_SUCCESS != result) return 1;
 
   //get the volume handle to provide to ray_fire 
   MEntVector vols; 
@@ -84,14 +88,21 @@ int main(int argc, char **argv)
 
   moab::EntityHandle vol = vols[0]->mesh_handle();
 
+  //ray starting in the center (w/ small offset) fired at the hv surface
   double start[3] = { 0, 0.01, 0};
   double ray_vec[3] = {0, 0, 1};
 
+  //dummy vars for the ray_fire function
   moab::EntityHandle dummy_handle; 
   double dummy_doub;
-
-  dag->ray_fire( vol, start, ray_vec, dummy_handle, dummy_doub);
   
+  //statistics holders for the ray_fire
+  moab::DagMC::RayHistory ray_hist; 
+  moab::OrientedBoxTreeTool::TrvStats ray_stats;
+  
+  //fire the ray
+  result = dag->ray_fire( vol, start, ray_vec, dummy_handle, dummy_doub, &ray_hist, 0, 1, &ray_stats);
+  if( MB_SUCCESS != result) return 1;  
 
   
   return 0;
