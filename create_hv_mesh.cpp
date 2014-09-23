@@ -12,6 +12,7 @@
 #include "meshkit/ModelEnt.hpp"
 #include "gen.hpp"
 #include "../src/tools/measure.hpp"
+#include "DagMC.hpp"
 
 using namespace MeshKit;
 
@@ -67,6 +68,32 @@ int main(int argc, char **argv)
   refacet_surface( hv_surf, A_f, valence );
 
   mk->save_mesh("cube_mod.h5m");
+
+  //now we'll try to load this mesh-file into a dagmc instance
+  moab::DagMC *dag = moab::DagMC::instance();
+
+  //try loading the file 
+  dag->load_file( "cube_mod.h5m" );
+
+  //generate the OBB tree
+  dag->init_OBBTree();
+
+  //get the volume handle to provide to ray_fire 
+  MEntVector vols; 
+  mk->get_entities_by_dimension( 3, vols );
+
+  moab::EntityHandle vol = vols[0]->mesh_handle();
+
+  double start[3] = { 0, 0.01, 0};
+  double ray_vec[3] = {0, 0, 1};
+
+  moab::EntityHandle dummy_handle; 
+  double dummy_doub;
+
+  dag->ray_fire( vol, start, ray_vec, dummy_handle, dummy_doub);
+  
+
+  
   return 0;
 
 }
