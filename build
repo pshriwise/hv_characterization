@@ -6,7 +6,12 @@ g++ create_hv_mesh.cpp -o create_hv_mesh -g -I/home/shriwise/dagmc_blds/lasso/in
 g++ sweep.cpp -o sweep
 
 
+./sweep
+
 if [ -a "sweep_param_space" ]
 then
   chmod u+x sweep_param_space
+  rm sweep
 fi
+
+
