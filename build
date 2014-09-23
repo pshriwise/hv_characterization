@@ -4,3 +4,9 @@ echo Building create_hv_mesh...
 g++ create_hv_mesh.cpp -o create_hv_mesh -g -I/home/shriwise/dagmc_blds/lasso/include -I/home/shriwise/dagmc_blds/cgm_dev/include/ -I/home/shriwise/dagmc_blds/moabs/include -I/home/shriwise/meshkit/include/ -L/home/shriwise/dagmc_blds/moabs/lib/ -lMOAB -L/home/shriwise/meshkit/lib/ -lMeshKit
 
 g++ sweep.cpp -o sweep
+
+
+if [ -a "sweep_param_space" ]
+then
+  chmod u+x sweep_param_space
+fi
