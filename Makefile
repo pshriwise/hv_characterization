@@ -6,7 +6,7 @@ INCLUDE_DIRS = -I/home/shriwise/dagmc_blds/lasso/include \
                -I/home/shriwise/dagmc_blds/moabs/include \
 	       -I/home/shriwise/meshkit/include/
 
-LIBS = -L/home/shriwise/dagmc_blds/moabs/lib/ -lMOAB \
+LIBS = -L/home/shriwise/dagmc_blds/moabs/lib/ -lMOAB -ldagmc \
        -L/home/shriwise/meshkit/lib/ -lMeshKit
 
 
