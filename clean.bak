@@ -1,4 +1,0 @@
-#!/bin/bash
-
-echo Removing programs...
-git clean -f
