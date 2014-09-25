@@ -5,12 +5,13 @@
 #include <fstream>
 
 
+void gnuplot_script( int A_f, int valence);
 
 int main(int argc, char** argv)
 {
 
-  int area_intervals = 5;
-  int valence_intervals = 3*area_intervals;
+  int area_intervals = 10;
+  int valence_intervals = 3*10;
   std::ofstream bash_file;
   std::ofstream param_file;
 
@@ -49,13 +50,33 @@ int main(int argc, char** argv)
 	}
     }
 
-  
+  gnuplot_script( area_intervals, valence_intervals );
+  return 0;
+}
 
 
-  
-  
+void gnuplot_script( int area_intervals, int valence_intervals)
+{
 
+  std::ofstream gp_file; 
+  gp_file.open("timing_plot.p");
+    
+  gp_file << "set dgrid3d " << area_intervals << ", " << valence_intervals << std::endl;
+  gp_file << "set style data lines" << std::endl;
 
+  //gp_file << "set hidden3d" << std::endl;
 
+  gp_file << "set xlabel 'Area Fraction (A_f)' " << std::endl;
+  gp_file << "set ylabel 'Valence (n)'" << std::endl;
+  gp_file << "set zlabel 'Avg Ray Fire Time (micro-s)' " << std::endl;
+
+  gp_file << "splot 'data.dat' u 1:2:($3 * 1000000) notitle" << std::endl;
+
+  gp_file << "pause -1" << std::endl;
 
 }
+
+
+
+
+
