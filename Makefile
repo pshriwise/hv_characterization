@@ -28,4 +28,6 @@ scripts: sweep
 	chmod u+x sweep_param_space
 
 clean: 
-	rm -f *.dat sweep create_hv_mesh sweep_param_space cube_mod.h5m *~ *.p
+	mv cube.h5m cube.saf
+	rm -f *.dat sweep create_hv_mesh sweep_param_space *.h5m *.vtk *.stl *~ *.p
+	mv cube.saf cube.h5m
