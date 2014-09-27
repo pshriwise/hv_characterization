@@ -290,7 +290,8 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
   //now create the vertices for the new regions
   
   //based on surface area, get the length of one of the center-square sides
-  double hv_area = A_f*surface_area; 
+  double hv_area = A_f*cube_area; 
+  if ( hv_area >= surface_area ) std::cout << "ERROR: Area fraction must be less than 1/6 for now." << std::endl;
   assert( hv_area < surface_area );
   double hv_side = sqrt(hv_area);
 
