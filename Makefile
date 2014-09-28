@@ -18,9 +18,12 @@ build: sweep hv_mesh
 sweep:
 	$(CC) sweep.cpp -o sweep
 
-hv_mesh:
+hexmaker.o:
+	$(CC) hexmaker.cpp $(INCLUDE_DIRS) $(LIBS) -c -o hexmaker.o
 
-	$(CC) create_hv_mesh.cpp -o create_hv_mesh $(INCLUDE_DIRS) $(LIBS) 
+hv_mesh: hexmaker.o
+
+	$(CC) create_hv_mesh.cpp hexmaker.o -o create_hv_mesh $(INCLUDE_DIRS) $(LIBS) 
 
 scripts: sweep
 
