@@ -21,8 +21,8 @@ using namespace MeshKit;
 
 MKCore *mk;
 
+////// Functions for generating the hv region \\\\\\\\\\
 void prep_mesh( double A_f, int valence );
-
 // creates new facets for the square surface (in const Z-plane) with a high-valence region of size A_f*(surface_area) and a valency of n
 void refacet_surface( moab::EntityHandle surf, double A_f, int valence );
 // returns the verts of an empty square in the center of the surface and surrounds this square w/ triangles in a watertight fashion
@@ -35,9 +35,11 @@ void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf );
 void tear_down_surface( moab::EntityHandle surf );
 // returns the area of a polygon given the ordered verts
 double polygon_area( std::vector<moab::EntityHandle> verts );
+
+////// Functions for analyzing the hv region \\\\\\\\\\\\\
 moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& filename);
 
-
+moab::ErrorCode get_volumes( moab::Interface* mb, moab::Range &volumes);
 
 int main(int argc, char **argv)
 {
@@ -56,13 +58,15 @@ int main(int argc, char **argv)
   //make sure the input of A_f is valid
   if( 1 <= A_f ){ std::cout << "Area fraction A_f must be less than 1." << std::endl; return 0; }
   int valence = atoi( argv[2] );
+
+
+  //get the mesh ready_using MeshKit (easier for manipulating meshes)
   mk = new MKCore();
-  
+
   prep_mesh( A_f, valence);
 
   //get rid of the MeshKit instance here to avoid any cross-over
   delete mk;
-  ////////////// END OF MESHKIT STUFF \\\\\\\\\\\\\\\\\\\\\\\
 
   ////////////// START OF MOAB STUFF \\\\\\\\\\\\\\\\\\\\\\\\
 
@@ -78,17 +82,11 @@ int main(int argc, char **argv)
   result = dag->init_OBBTree();
   if( MB_SUCCESS != result) return 1;
 
-  //get the GEOM_DIM tag
-  moab::Tag geom_dim;
-  dag->moab_instance()->tag_get_handle( GEOM_DIMENSION_TAG_NAME, 1,
-					MB_TYPE_INTEGER, geom_dim);
-  
-  int dim = 3;
-  void* ptr = &dim;
+  //get all of the volumes in the dagmc instance
+  moab::Range vols;
+  result = get_volumes( dag->moab_instance(), vols);
+  if( MB_SUCCESS != result) return 1; 
 
-  moab::Range volumes;
-  //get all volume meshsets (should only be one)
-  dag->moab_instance()->get_entities_by_type_and_tag( 0, MBENTITYSET, &geom_dim, &ptr, 1, volumes);
 
   //ray starting in the center (w/ small offset) fired at the hv surface
   double start[3] = { 0, 0.01, 0};
@@ -102,19 +100,18 @@ int main(int argc, char **argv)
   moab::DagMC::RayHistory ray_hist; 
   moab::OrientedBoxTreeTool::TrvStats ray_stats;
   
-
   std::clock_t start_time, end_time;
 
   //fire the ray
   start_time = std::clock();
-  result = dag->ray_fire( volumes[0], start, ray_vec, dummy_handle, dummy_doub, &ray_hist, 0, 1, &ray_stats);
+  result = dag->ray_fire( vols[0], start, ray_vec, dummy_handle, dummy_doub, &ray_hist, 0, 1, &ray_stats);
   end_time = std::clock();
   if( MB_SUCCESS != result) return 1;  
 
   std::cout << "The ray fire took " << (end_time - start_time) / (double)(CLOCKS_PER_SEC / 1000)  << " ms." << std::endl;
   
   std::string dum;
-  result = write_obb_mesh( dag, volumes[0], dum);
+  result = write_obb_mesh( dag, vols[0], dum);
   if( MB_SUCCESS != result) return 1;  
 
   return 0;
@@ -158,9 +155,7 @@ void refacet_surface( moab::EntityHandle surf, double A_f, int valence )
 
   make_hv_region( surf, box, valence );
 
-
 }
-
 
 // returns the verts of an empty box, centered on the origin which is surrounded by triangles
 void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts )
@@ -412,7 +407,6 @@ void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> bo
   
 }
 
-
 void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
 {
 
@@ -500,6 +494,31 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
   
   return poly_area;
 }
+
+ moab::ErrorCode get_volumes( moab::Interface* mb, moab::Range &volumes)
+ {
+
+   moab::ErrorCode rval; 
+
+   //get the GEOM_DIM tag
+   moab::Tag geom_dim;
+   rval = mb->tag_get_handle( GEOM_DIMENSION_TAG_NAME, 1,
+		       MB_TYPE_INTEGER, geom_dim);
+   assert( MB_SUCCESS == rval);
+   if( MB_SUCCESS != rval) return rval; 
+
+   // geom dimension of 3 should indicate a volume
+   int dim = 3;
+   void* ptr = &dim;
+   
+   //get all volume meshsets (should only be one)
+   mb->get_entities_by_type_and_tag( 0, MBENTITYSET, &geom_dim, &ptr, 1, volumes);
+   assert( MB_SUCCESS == rval);
+   if( MB_SUCCESS != rval) return rval; 
+
+   return MB_SUCCESS;
+ }
+
 
 moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& filename) 
 {
