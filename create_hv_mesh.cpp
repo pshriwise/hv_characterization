@@ -22,6 +22,7 @@ using namespace MeshKit;
 MKCore *mk;
 
 ////// Functions for generating the hv region \\\\\\\\\\
+
 void prep_mesh( double A_f, int valence );
 // creates new facets for the square surface (in const Z-plane) with a high-valence region of size A_f*(surface_area) and a valency of n
 void refacet_surface( moab::EntityHandle surf, double A_f, int valence );
@@ -37,6 +38,7 @@ void tear_down_surface( moab::EntityHandle surf );
 double polygon_area( std::vector<moab::EntityHandle> verts );
 
 ////// Functions for analyzing the hv region \\\\\\\\\\\\\
+
 moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& filename);
 
 moab::ErrorCode get_volumes( moab::Interface* mb, moab::Range &volumes);
