@@ -12,7 +12,6 @@
 #include "meshkit/MKCore.hpp"
 #include "meshkit/ModelEnt.hpp"
 #include "gen.hpp"
-#include "../src/tools/measure.hpp"
 #include "DagMC.hpp"
 #include "moab/OrientedBoxTreeTool.hpp"
 #include "../src/src/OrientedBox.hpp"
