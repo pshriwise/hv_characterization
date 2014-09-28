@@ -95,6 +95,8 @@ moab::ErrorCode get_volumes( moab::Interface* mb, moab::Range &volumes);
 void get_time_mem(double &tot_time, double &user_time,
                   double &sys_time, double &tot_mem); 
 
+void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source);
+
 int main(int argc, char **argv)
 {
 
@@ -119,8 +121,6 @@ int main(int argc, char **argv)
 
   prep_mesh( A_f, valence);
 
-  //get rid of the MeshKit instance here to avoid any cross-over
-  delete mk;
 
   ////////////// START OF MOAB STUFF \\\\\\\\\\\\\\\\\\\\\\\\
 
@@ -148,11 +148,14 @@ int main(int argc, char **argv)
 
 
   //analyze mesh here
-
+  double avg_fire_time;
+  CartVect source;
+  source[0] = 0; source [1] = 0; source [2] = 0;
   //call into the new functions for firing random rays and get the avg time
-
+  fire_rand_rays( dag, vols[0], 1000, avg_fire_time, source);
   //write time to data file
 
+  std::cout << "The average fire time for this mesh was: " << avg_fire_time << "s" << std::endl;
 
   return 0;
 
@@ -659,7 +662,8 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
     std::cout << "Estimated time per call (excluding ray generation): " 
 	      << (timewith - timewithout) / num_random_rays << " sec" << std::endl;
   }
-  
+ 
+  avg_fire_time = (timewith - timewithout) / num_random_rays;; 
 }
 
 
