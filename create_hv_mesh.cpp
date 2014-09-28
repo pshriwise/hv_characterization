@@ -14,14 +14,12 @@
 #include "gen.hpp"
 #include "DagMC.hpp"
 #include "moab/OrientedBoxTreeTool.hpp"
-#include "../src/src/OrientedBox.hpp"
 #include "hexmaker.hpp"
 
 
 using namespace MeshKit;
 
 MKCore *mk;
-
 
 // creates new facets for the square surface (in const Z-plane) with a high-valence region of size A_f*(surface_area) and a valency of n
 void refacet_surface( moab::EntityHandle surf, double A_f, int valence );
