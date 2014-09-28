@@ -39,12 +39,8 @@ public:
     : tool(tool_ptr), mbi2(interface_ptr), base_filename(base_name) {}
 
   ~HexMaker() {};
-  /*  
-  moab::ErrorCode visit( moab::EntityHandle node, 
-			 int depth, 
-			 bool& descend );
-  */
 
+  // nothing special about the leaves for this op
   moab::ErrorCode leaf( moab::EntityHandle node ) { return MB_SUCCESS; };
 
   moab::ErrorCode visit( moab::EntityHandle node,
@@ -76,10 +72,6 @@ public:
     assert( MB_SUCCESS == rval );
     if( MB_SUCCESS != rval ) return rval; 
 
-    //mbi2->write_file("test.h5m");
-    //assert( MB_SUCCESS == rval );
-    //if( MB_SUCCESS != rval ) return rval; 
-      
     hexes.push_back(new_hex);
     
     descend = true;    
@@ -87,11 +79,15 @@ public:
     return MB_SUCCESS;
   }
 
-  void write_files()
+  moab::ErrorCode write_files()
   {
    
+    moab::ErrorCode rval; 
+
     moab::EntityHandle temp_set; 
-    mbi2->create_meshset( MESHSET_SET, temp_set);
+    rval = mbi2->create_meshset( MESHSET_SET, temp_set);
+    assert( MB_SUCCESS == rval );
+    if( MB_SUCCESS != rval ) return rval; 
 
     int curr_depth = 0;
     while( !hexes.empty() )
@@ -106,7 +102,9 @@ public:
 	    int hex_depth;
 	    void *data = &hex_depth;
 
-	    mbi2->tag_get_data( depth_tag, &this_hex, 1, data);
+	    rval = mbi2->tag_get_data( depth_tag, &this_hex, 1, data);
+	    assert( MB_SUCCESS == rval );
+	    if( MB_SUCCESS != rval ) return rval; 
 
 	    if( hex_depth == curr_depth )
 	      {
@@ -122,30 +120,40 @@ public:
 	  }
 
 	//we should now have a list of vectors to write
-	
 	if( !to_write.empty() )
 	  {
 	    //add them to the temp_meshset
-	    mbi2->add_entities( temp_set, &(to_write[0]), to_write.size() );
-	    
+	    rval = mbi2->add_entities( temp_set, &(to_write[0]), to_write.size() );
+	    assert( MB_SUCCESS == rval );
+	    if( MB_SUCCESS != rval ) return rval; 
+
 	    //write this meshset to file, appending the current depth then the file suffix
 	    
 	    std::ostringstream filename;
 	    filename << base_filename << "_";
 	    filename << curr_depth << ".h5m";
 	    
-	    mbi2->write_mesh( &(filename.str()[0]) , &temp_set, 1 );
+	    rval = mbi2->write_mesh( &(filename.str()[0]) , &temp_set, 1 );
+	    assert( MB_SUCCESS == rval );
+	    if( MB_SUCCESS != rval ) return rval; 
+
 	  }
 	//now clear out the to_write vector and the meshset
 	to_write.clear();
 
-	mbi2->clear_meshset( &temp_set, 1);
-	
+	rval = mbi2->clear_meshset( &temp_set, 1);
+	assert( MB_SUCCESS == rval );
+	if( MB_SUCCESS != rval ) return rval; 
+
+	// after writing the boxes for this depth of the tree, move down in depth
 	curr_depth++;
 	
       }
+      return MB_SUCCESS;
 
-  }
+  }//end write_files
+
+
   
 };
 
@@ -162,7 +170,7 @@ void tear_down_surface( moab::EntityHandle surf );
 // returns the area of a polygon given the ordered verts
 double polygon_area( std::vector<moab::EntityHandle> verts );
 
-void write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& filename);
+moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& filename);
 
 int main(int argc, char **argv)
 {
@@ -251,7 +259,8 @@ int main(int argc, char **argv)
   std::cout << "The ray fire took " << (end_time - start_time) / (double)(CLOCKS_PER_SEC / 1000)  << " ms." << std::endl;
   
   std::string dum;
-  write_obb_mesh( dag, volumes[0], dum);
+  result = write_obb_mesh( dag, volumes[0], dum);
+  if( MB_SUCCESS != result) return 1;  
 
   return 0;
 
@@ -615,16 +624,22 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
 }
 
 
-void write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& filename) 
+moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& filename) 
 {
+
+  moab::ErrorCode rval; 
 
   moab::EntityHandle root;
 
-  dag->get_root( vol, root );
+  rval = dag->get_root( vol, root );
+  assert( MB_SUCCESS == rval );
+  if( MB_SUCCESS != rval ) return rval; 
 
   moab::OrientedBoxTreeTool *obbtool = dag->obb_tree();
 
-  obbtool->stats( root, std::cout );
+  rval = obbtool->stats( root, std::cout );
+  assert( MB_SUCCESS == rval );
+  if( MB_SUCCESS != rval ) return rval; 
 
   //make a new moab core for the box hexes
   moab::Core mbi2;
@@ -633,9 +648,14 @@ void write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& file
 
   moab::OrientedBoxTreeTool::TrvStats tree_stats;
 
-  obbtool->preorder_traverse( root, op1, &tree_stats );
+  rval = obbtool->preorder_traverse( root, op1, &tree_stats );
+  assert( MB_SUCCESS == rval );
+  if( MB_SUCCESS != rval ) return rval; 
 
-  op1.write_files();
+  rval = op1.write_files();
+  assert( MB_SUCCESS == rval );
+  if( MB_SUCCESS != rval ) return rval; 
+
 
 }
   
