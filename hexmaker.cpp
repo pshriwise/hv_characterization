@@ -15,22 +15,22 @@ ErrorCode HexMaker::leaf( EntityHandle node ) { return MB_SUCCESS; };
 
 // a visit to a node, will create an OrientedBox object for that node, get a hex from that box and tag it with 
 // an integer tag representing it's depth in the tree, and add it to the list of *hexes* for this tree
-moab::ErrorCode HexMaker::visit( moab::EntityHandle node,
-				 int depth, 
-				 bool& descend)
+ErrorCode HexMaker::visit( EntityHandle node,
+			   int depth, 
+			   bool& descend)
 {
   
-  moab::ErrorCode rval;
+ ErrorCode rval;
   
   //create a new tag for the tree depth of the obb
   std::string depth_tag_name = "TREE_DEPTH";
   rval = mbi2->tag_get_handle( depth_tag_name.c_str(),  1, MB_TYPE_INTEGER, depth_tag, 
-			       moab::MB_TAG_DENSE|moab::MB_TAG_CREAT);
+			       MB_TAG_DENSE|MB_TAG_CREAT);
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
   
   
-  moab::OrientedBox box;
+  OrientedBox box;
   rval = tool->box( node, box );
   assert(MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
@@ -54,12 +54,12 @@ moab::ErrorCode HexMaker::visit( moab::EntityHandle node,
 //this function will go through the hexes found for the tree tool of this class
 //and write them to file based on their depth in the tree
 // filename formats: base_filename + "_" + depth_value + ".h5m"
-moab::ErrorCode HexMaker::write_to_files( std::string base_filename )
+ErrorCode HexMaker::write_to_files( std::string base_filename )
 {
   
-  moab::ErrorCode rval; 
+  ErrorCode rval; 
   
-  moab::EntityHandle temp_set; 
+  EntityHandle temp_set; 
   rval = mbi2->create_meshset( MESHSET_SET, temp_set);
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
@@ -68,12 +68,12 @@ moab::ErrorCode HexMaker::write_to_files( std::string base_filename )
   while( !hexes.empty() )
     {
       
-      std::vector<moab::EntityHandle> to_write;
-      for(std::vector<moab::EntityHandle>::iterator i = hexes.begin(); 
+      std::vector<EntityHandle> to_write;
+      for(std::vector<EntityHandle>::iterator i = hexes.begin(); 
 	  i != hexes.end(); i++)
 	{
 	  
-	  moab::EntityHandle this_hex = *i;
+	  EntityHandle this_hex = *i;
 	  int hex_depth;
 	  void *data = &hex_depth;
 	  
