@@ -32,5 +32,5 @@ scripts: sweep
 
 clean: 
 	mv cube.h5m cube.saf
-	rm -f *.dat sweep create_hv_mesh sweep_param_space *.h5m *.vtk *.stl *~ *.p
+	rm -f *.dat sweep create_hv_mesh sweep_param_space *.h5m *.vtk *.stl *~ *.p *.o
 	mv cube.saf cube.h5m
