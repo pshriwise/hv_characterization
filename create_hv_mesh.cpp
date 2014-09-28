@@ -28,7 +28,6 @@ private:
   moab::OrientedBoxTreeTool *tool;
   moab::EntityHandle new_hex;
   moab::ErrorCode result; 
-  std::string base_filename;
   //note: this should probably be a different interface than the original instance
   //unless it is desired that the box hexes are added to that instance
   moab::Interface *mbi2;
@@ -37,8 +36,8 @@ private:
 
 public:
   
-  HexMaker( moab::OrientedBoxTreeTool *tool_ptr, moab::Interface* interface_ptr, std::string base_name )
-    : tool(tool_ptr), mbi2(interface_ptr), base_filename(base_name) {}
+  HexMaker( moab::OrientedBoxTreeTool *tool_ptr, moab::Interface* interface_ptr )
+    : tool(tool_ptr), mbi2(interface_ptr) {}
 
   ~HexMaker() {};
 
@@ -85,7 +84,8 @@ public:
 
   //this function will go through the hexes found for the tree tool of this class
   //and write them to file based on their depth in the tree
-  moab::ErrorCode write_files()
+  // filename formats: base_filename + "_" + depth_value + ".h5m"
+  moab::ErrorCode write_files( std::string base_filename )
   {
    
     moab::ErrorCode rval; 
@@ -650,7 +650,7 @@ moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::s
   //make a new moab core for the box hexes
   moab::Core mbi2;
 
-  HexMaker op1( obbtool, &mbi2, "test" );
+  HexMaker op1( obbtool, &mbi2 );
 
   moab::OrientedBoxTreeTool::TrvStats tree_stats;
 
@@ -658,7 +658,7 @@ moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::s
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
 
-  rval = op1.write_files();
+  rval = op1.write_files( "test" );
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
 
