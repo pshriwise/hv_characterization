@@ -21,6 +21,8 @@ using namespace MeshKit;
 
 MKCore *mk;
 
+void prep_mesh( double A_f, int valence );
+
 // creates new facets for the square surface (in const Z-plane) with a high-valence region of size A_f*(surface_area) and a valency of n
 void refacet_surface( moab::EntityHandle surf, double A_f, int valence );
 // returns the verts of an empty square in the center of the surface and surrounds this square w/ triangles in a watertight fashion
@@ -33,8 +35,9 @@ void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf );
 void tear_down_surface( moab::EntityHandle surf );
 // returns the area of a polygon given the ordered verts
 double polygon_area( std::vector<moab::EntityHandle> verts );
-
 moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& filename);
+
+
 
 int main(int argc, char **argv)
 {
@@ -52,28 +55,16 @@ int main(int argc, char **argv)
   double A_f = atof(argv[1]);
   //make sure the input of A_f is valid
   if( 1 <= A_f ){ std::cout << "Area fraction A_f must be less than 1." << std::endl; return 0; }
-  int valence = atoi(argv[2]);
-
+  int valence = atoi( argv[2] );
   mk = new MKCore();
   
-  //Load the mesh file
-  mk->load_mesh("cube.h5m");
+  prep_mesh( A_f, valence);
 
-  //Get all of the surface ModelEnts
-  MEntVector surfs;
-  mk->get_entities_by_dimension(2, surfs);
-  
-  std::cout << "There are " << surfs.size() << " surfaces in this model." << std::endl;
+  //get rid of the MeshKit instance here to avoid any cross-over
+  delete mk;
+  ////////////// END OF MESHKIT STUFF \\\\\\\\\\\\\\\\\\\\\\\
 
-  //Now to find one of the surfaces that is constant in z (for convenience)
-  moab::EntityHandle hv_surf;
-  get_hv_surf( surfs, hv_surf );
-
-  //refacet the surface using the desired area fraction for the hv region
-  refacet_surface( hv_surf, A_f, valence );
-
-  mk->save_mesh("cube_mod.h5m");
-  mk->moab_instance()->delete_mesh();
+  ////////////// START OF MOAB STUFF \\\\\\\\\\\\\\\\\\\\\\\\
 
   //now we'll try to load this mesh-file into a dagmc instance
   moab::DagMC *dag = moab::DagMC::instance();
@@ -131,6 +122,29 @@ int main(int argc, char **argv)
 }
 
 
+void prep_mesh( double A_f, int valence )
+{
+
+  //Load the mesh file
+  mk->load_mesh("cube.h5m");
+
+  //Get all of the surface ModelEnts
+  MEntVector surfs;
+  mk->get_entities_by_dimension(2, surfs);
+  
+  std::cout << "There are " << surfs.size() << " surfaces in this model." << std::endl;
+
+  //Now to find one of the surfaces that is constant in z (for convenience)
+  moab::EntityHandle hv_surf;
+  get_hv_surf( surfs, hv_surf );
+
+  //refacet the surface using the desired area fraction for the hv region
+  refacet_surface( hv_surf, A_f, valence );
+
+  mk->save_mesh("cube_mod.h5m");
+  mk->moab_instance()->delete_mesh();
+
+}
 void refacet_surface( moab::EntityHandle surf, double A_f, int valence )
 {
 
@@ -486,7 +500,6 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
   
   return poly_area;
 }
-
 
 moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& filename) 
 {
