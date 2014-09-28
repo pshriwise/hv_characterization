@@ -39,7 +39,7 @@ double polygon_area( std::vector<moab::EntityHandle> verts );
 
 ////// Functions for analyzing the hv region \\\\\\\\\\\\\
 
-moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& filename);
+moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename);
 
 moab::ErrorCode get_volumes( moab::Interface* mb, moab::Range &volumes);
 
@@ -90,29 +90,7 @@ int main(int argc, char **argv)
   if( MB_SUCCESS != result) return 1; 
 
 
-  //ray starting in the center (w/ small offset) fired at the hv surface
-  double start[3] = { 0, 0.01, 0};
-  double ray_vec[3] = {0, 0, 1};
-
-  //dummy vars for the ray_fire function
-  moab::EntityHandle dummy_handle; 
-  double dummy_doub;
-  
-  //statistics holders for the ray_fire
-  moab::DagMC::RayHistory ray_hist; 
-  moab::OrientedBoxTreeTool::TrvStats ray_stats;
-  
-  std::clock_t start_time, end_time;
-
-  //fire the ray
-  start_time = std::clock();
-  result = dag->ray_fire( vols[0], start, ray_vec, dummy_handle, dummy_doub, &ray_hist, 0, 1, &ray_stats);
-  end_time = std::clock();
-  if( MB_SUCCESS != result) return 1;  
-
-  std::cout << "The ray fire took " << (end_time - start_time) / (double)(CLOCKS_PER_SEC / 1000)  << " ms." << std::endl;
-  
-  std::string dum;
+  std::string dum = "test";
   result = write_obb_mesh( dag, vols[0], dum);
   if( MB_SUCCESS != result) return 1;  
 
@@ -522,7 +500,7 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
  }
 
 
-moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& filename) 
+moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename) 
 {
 
   moab::ErrorCode rval; 
@@ -550,7 +528,7 @@ moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::s
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
 
-  rval = op1.write_to_files( "test" );
+  rval = op1.write_to_files( base_filename );
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
 
