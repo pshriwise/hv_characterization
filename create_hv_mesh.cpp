@@ -85,7 +85,7 @@ public:
   //this function will go through the hexes found for the tree tool of this class
   //and write them to file based on their depth in the tree
   // filename formats: base_filename + "_" + depth_value + ".h5m"
-  moab::ErrorCode write_files( std::string base_filename )
+  moab::ErrorCode write_to_files( std::string base_filename )
   {
    
     moab::ErrorCode rval; 
@@ -658,7 +658,7 @@ moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::s
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
 
-  rval = op1.write_files( "test" );
+  rval = op1.write_to_files( "test" );
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
 
