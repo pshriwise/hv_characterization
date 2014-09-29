@@ -24,7 +24,7 @@ hexmaker.o:
 hv_mesh_gen: hexmaker.o
 	$(CC) hv_mesh_gen.cpp $(INCLUDE_DIRS) $(LIBS) -c
 
-plot_script:
+plot_datafile:
 	paste params.dat data.dat > all.dat
 
 clean: 
