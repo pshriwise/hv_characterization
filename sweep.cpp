@@ -5,14 +5,15 @@
 #include <fstream>
 #include "hv_mesh_gen.hpp"
 
-void gnuplot_script( int A_f, int valence);
+void gnuplot_script();
 
 int main(int argc, char** argv)
 {
 
   double A_f = 0;
   int valence = 0;
-  
+
+  gnuplot_script();
   std::ofstream data_file, param_file;
   
   param_file.open("params1.dat");
@@ -62,22 +63,17 @@ int main(int argc, char** argv)
 }
 
 
-void gnuplot_script( int area_intervals, int valence_intervals)
+void gnuplot_script()
 {
 
   std::ofstream gp_file; 
   gp_file.open("timing_plot.p");
     
-  gp_file << "set dgrid3d " << area_intervals << ", " << valence_intervals << std::endl;
-  gp_file << "set style data lines" << std::endl;
-
-  //gp_file << "set hidden3d" << std::endl;
-
   gp_file << "set xlabel 'Area Fraction (A_f)' " << std::endl;
   gp_file << "set ylabel 'Valence (n)'" << std::endl;
-  gp_file << "set zlabel 'Avg Ray Fire Time (micro-s)' " << std::endl;
+  gp_file << "set zlabel 'Avg Ray Fire Time (ms)' " << std::endl;
 
-  gp_file << "splot 'data.dat' u 1:2:($3 * 1000000) notitle" << std::endl;
+  gp_file << "splot 'all.dat' matrix nonuniform w lines" << std::endl;
 
   gp_file << "pause -1" << std::endl;
 
