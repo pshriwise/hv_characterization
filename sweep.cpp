@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <fstream>
-#include "create_hv_mesh.hpp"
+#include "hv_mesh_gen.hpp"
 
 void gnuplot_script( int A_f, int valence);
 

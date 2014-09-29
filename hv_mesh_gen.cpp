@@ -14,7 +14,7 @@
 #include "gen.hpp"
 #include "DagMC.hpp"
 #include "moab/OrientedBoxTreeTool.hpp"
-#include "create_hv_mesh.hpp"
+#include "hv_mesh_gen.hpp"
 
 //timing includes
 #include <fstream>
