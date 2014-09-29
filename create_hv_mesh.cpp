@@ -24,19 +24,6 @@
 #include <fcntl.h>
 #include <cstdlib>
 
-
-
-#if !defined(_MSC_VER) && !defined(__MINGW32__)
-#include <sys/resource.h>
-#endif
-#ifdef SOLARIS
-extern "C" int getrusage(int, struct rusage *);
-#ifndef RUSAGE_SELF
-#include </usr/ucbinclude/sys/rusage.h>
-#endif
-#endif
-
-
 using namespace MeshKit;
 
 MKCore *mk;
@@ -91,10 +78,6 @@ inline void RNDVEC(CartVect& uvw, double &az)
 moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename);
 
 moab::ErrorCode get_volumes( moab::Interface* mb, moab::Range &volumes);
-
-
-void get_time_mem(double &tot_time, double &user_time,
-                  double &sys_time, double &tot_mem); 
 
 void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source);
 
@@ -182,6 +165,7 @@ int main(int argc, char **argv)
 	  data_file << avg_fire_time << "\t";
 	  dag->moab_instance()->delete_mesh();
 	}
+
       //add a new line to the params file
       param_file << std::endl;
       param_file << A_f << "\t";
@@ -637,12 +621,10 @@ moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::s
 void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source)
 {
 
+  //always start with the same seed
   srand(12345);
 
   moab::CartVect xyz, uvw;
-
-  double ttime1, utime1, stime1, tmem1, ttime2, utime2, stime2, tmem2;
-  get_time_mem(ttime1, utime1, stime1, tmem1);
 
   int random_rays_missed = 0; 
 
@@ -662,11 +644,11 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
       RNDVEC(uvw, direction_az);
     }
     
-
-    //    std::cout << "x,y,z,u,v,w,u^2 + v^2 + w^2 = " << xyz 
-    //        << " " << uvw << " " << uvw%uvw << std::endl;
-    //uavg += uvw[0]; vavg += uvw[1]; wavg += uvw[2];
-
+#ifdef DEBUG
+    std::cout << "x,y,z,u,v,w,u^2 + v^2 + w^2 = " << xyz 
+	      << " " << uvw << " " << uvw%uvw << std::endl;
+    uavg += uvw[0]; vavg += uvw[1]; wavg += uvw[2];
+#endif
     // added ray orientation
     dagi->ray_fire(vol, xyz.array(), uvw.array(), dum, dist, NULL, 0, 1, &trv_stats );
     
@@ -675,87 +657,13 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
   }
   //end timer 
   end_time = std::clock();
-
-  get_time_mem(ttime2, utime2, stime2, tmem1);
-  double timewith = ttime2 - ttime1;
-  
-  srand(randseed); // reseed to generate the same values as before
-  
-  // now without ray fire call, to subtract out overhead
-  for (int j = 0; j < num_random_rays; j++) {
-    RNDVEC(uvw, location_az);
-    
-    xyz = uvw * source_rad + ray_source;
-    if (source_rad >= 0.0) {
-      RNDVEC(uvw, direction_az);
-    }
-  }
-  
-  get_time_mem(ttime1, utime1, stime1, tmem2);
-  double timewithout = ttime1 - ttime2;
-  
-  std::cout << " done." << std::endl;
   
   if( random_rays_missed ){
     std::cout << "Warning: " << random_rays_missed << " random rays did not hit the target volume" << std::endl;
   }
   
-  if( num_random_rays > 0 ){
-    std::cout << "Total time per ray fire: " << timewith/num_random_rays 
-	      << " sec" << std::endl;
-    std::cout << "Estimated time per call (excluding ray generation): " 
-	      << (timewith - timewithout) / num_random_rays << " sec" << std::endl;
-  }
- 
   avg_fire_time = (end_time - start_time) / (double)(CLOCKS_PER_SEC/1000); 
-  std::cout << "My timer says: " << avg_fire_time << "ms" << std::endl;
+  std::cout << "Average ray fire time: " << avg_fire_time << "ms" << std::endl;
 }
 
 
-void get_time_mem(double &tot_time, double &user_time,
-                  double &sys_time, double &tot_mem) 
-{
-  struct rusage r_usage;
-  getrusage(RUSAGE_SELF, &r_usage);
-  user_time = (double)r_usage.ru_utime.tv_sec +
-    ((double)r_usage.ru_utime.tv_usec/1.e6);
-  sys_time = (double)r_usage.ru_stime.tv_sec +
-    ((double)r_usage.ru_stime.tv_usec/1.e6);
-  tot_time = user_time + sys_time;
-  tot_mem = 0;
-
-  // try going to /proc to estimate total memory
-    char file_str[4096], dum_str[4096];
-    int file_ptr = -1, file_len;
-    file_ptr = open("/proc/self/stat", O_RDONLY);
-    file_len = read(file_ptr, file_str, sizeof(file_str)-1);
-    if (file_len == 0) return;
-    
-    close(file_ptr);
-    file_str[file_len] = '\0';
-      // read the preceeding fields and the ones we really want...
-    int dum_int;
-    unsigned int dum_uint, vm_size, rss;
-    int num_fields = sscanf(file_str, 
-                            "%d " // pid
-                            "%s " // comm
-                            "%c " // state
-                            "%d %d %d %d %d " // ppid, pgrp, session, tty, tpgid
-                            "%u %u %u %u %u " // flags, minflt, cminflt, majflt, cmajflt
-                            "%d %d %d %d %d %d " // utime, stime, cutime, cstime, counter, priority
-                            "%u %u " // timeout, itrealvalue
-                            "%d " // starttime
-                            "%u %u", // vsize, rss
-                            &dum_int, 
-                            dum_str, 
-                            dum_str, 
-                            &dum_int, &dum_int, &dum_int, &dum_int, &dum_int, 
-                            &dum_uint, &dum_uint, &dum_uint, &dum_uint, &dum_uint,
-                            &dum_int, &dum_int, &dum_int, &dum_int, &dum_int, &dum_int, 
-                            &dum_uint, &dum_uint, 
-                            &dum_int,
-                            &vm_size, &rss);
-    if (num_fields == 24)
-      tot_mem = ((double)vm_size);
-
-}
