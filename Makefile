@@ -10,25 +10,19 @@ LIBS = -L/home/shriwise/dagmc_blds/moabs/lib/ -lMOAB -ldagmc \
        -L/home/shriwise/meshkit/lib/ -lMeshKit
 
 
-all: build scripts
+all: build
 
 build: sweep hv_mesh
 
 
-sweep:
-	$(CC) sweep.cpp -o sweep
+sweep: hexmaker.o hv_mesh
+	$(CC) sweep.cpp create_hv_mesh.o hexmaker.o -o sweep $(INCLUDE_DIRS) $(LIBS)
 
 hexmaker.o:
 	$(CC) hexmaker.cpp $(INCLUDE_DIRS) $(LIBS) -c -o hexmaker.o
 
 hv_mesh: hexmaker.o
-
-	$(CC) create_hv_mesh.cpp create_hv_mesh.hpp hexmaker.o -o create_hv_mesh $(INCLUDE_DIRS) $(LIBS) 
-
-scripts: sweep
-
-	./sweep
-	chmod u+x sweep_param_space
+	$(CC) create_hv_mesh.cpp create_hv_mesh.hpp $(INCLUDE_DIRS) $(LIBS) -c
 
 clean: 
 	mv cube.h5m cube.saf

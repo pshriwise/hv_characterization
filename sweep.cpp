@@ -3,55 +3,62 @@
 
 #include <iostream>
 #include <fstream>
-
+#include "create_hv_mesh.hpp"
 
 void gnuplot_script( int A_f, int valence);
 
 int main(int argc, char** argv)
 {
 
+  double A_f = 0;
+  int valence = 0;
+  
+  std::ofstream data_file, param_file;
+  
+  param_file.open("params1.dat");
+  data_file.open("data1.dat");
+  //get the mesh ready_using MeshKit (easier for manipulating meshes)
+
+  param_file << 0;
+
   int area_intervals = 10;
   int valence_intervals = 3*10;
-  std::ofstream bash_file;
-  std::ofstream param_file;
+  double max_A_f = 1.0/6.0;
+  int max_n = 1e5;
 
-  bash_file.open("sweep_param_space");
-  param_file.open("params.dat");
-
-  bash_file << "#!/bin/bash" << std::endl << std::endl;
-
-  bash_file << "# Sweep parameter space of both A_f and n with " 
-            << area_intervals << " area fraction intervals " 
-	    << "and " << valence_intervals << " valence interfvals." << std::endl;
-
-  double max_A_f = 1;
-  
-  int max_n = 1e6;
-
-  std::string rayfire_program = "~/dagmc_blds/moabs/bld/tools/dagmc/ray_fire_test";
-  for(unsigned int i = 1; i < area_intervals; i++)
+  for(unsigned int i=1; i < area_intervals; i++)
     {
 
-      for(unsigned int j = 1; j < valence_intervals; j++)
+      A_f = (double)i * ( max_A_f / area_intervals);
+      //write this value to params file everytime
+
+      for(unsigned int j=1; j < valence_intervals; j++)
 	{
-	  //set values for this run
-	  double A_f = (double) i * ( max_A_f / area_intervals);
-	  double n = (double) j * ( max_n / valence_intervals );
-	  
-	  //write these params to our data file
-	  param_file << A_f << "\t" << n << std::endl;
-	  
-	  //create the new cube_mod mesh
-	  bash_file << "./create_hv_mesh " << A_f << " " << n << std::endl;
-	  
-	  //test the mesh
-	  bash_file << rayfire_program << " cube_mod.h5m -n 10000 -c 0 0 0" << std::endl;
-	  bash_file << std::endl;
+	  valence = (double)j * ( max_n / valence_intervals );
+	  //the first time we go through the inner loop, 
+	  //write all of the valence values
+
+	  if ( 1 == i ) param_file << "\t" << valence << "\t";
+
+	  double fire_time = 0;
+	  std::cout << "Area fraction: " << A_f << std::endl << "Valence: " << valence << std::endl;
+
+	  test_hv_cube_mesh( A_f, valence, fire_time);
+	  data_file << fire_time << "\t";
+
 	}
+
+      param_file << std::endl;
+      param_file << A_f << "\t";
+      data_file << std::endl;
     }
 
-  gnuplot_script( area_intervals, valence_intervals );
+  param_file.close();
+  data_file.close();
+  
   return 0;
+
+
 }
 
 

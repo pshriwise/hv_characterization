@@ -25,74 +25,7 @@
 
 using namespace MeshKit;
 
-MKCore *mk;
-
-
-
-int main(int argc, char **argv)
-{
-  /*
-  //hangle arguments
-  if( 3 != argc  ) 
-    {
-      std::cout << "Please include all necessary arguments! Exiting..." << std::endl;
-      std::cout << "To generate a high valence region with area ";
-      std::cout << "fraction A_f (double) and verts of valency n:" << std::endl;
-      std::cout << "$ ./create_hv_mesh <A_f> <n>" << std::endl;
-      return 0;
-    }
-  */
-  double A_f = 0;
-  int valence = 0;
-  
-  std::ofstream data_file, param_file;
-  
-  param_file.open("params1.dat");
-  data_file.open("data1.dat");
-  //get the mesh ready_using MeshKit (easier for manipulating meshes)
-  mk = new MKCore();
-
-  param_file << 0;
-
-  int area_intervals = 10;
-  int valence_intervals = 3*10;
-  double max_A_f = 1.0/6.0;
-  int max_n = 1e5;
-
-  for(unsigned int i=1; i < area_intervals; i++)
-    {
-
-      A_f = (double)i * ( max_A_f / area_intervals);
-      //write this value to params file everytime
-
-      for(unsigned int j=1; j < valence_intervals; j++)
-	{
-	  valence = (double)j * ( max_n / valence_intervals );
-	  //the first time we go through the inner loop, 
-	  //write all of the valence values
-
-	  if ( 1 == i ) param_file << "\t" << valence << "\t";
-
-	  double fire_time = 0;
-	  std::cout << "Area fraction: " << A_f << std::endl << "Valence: " << valence << std::endl;
-
-	  test_hv_cube_mesh( A_f, valence, fire_time);
-	  data_file << fire_time << "\t";
-
-	}
-
-      param_file << std::endl;
-      param_file << A_f << "\t";
-      data_file << std::endl;
-    }
-
-  param_file.close();
-  data_file.close();
-  
-  return 0;
-
-}
-
+MKCore *mk = new MKCore();
 
 moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_time )
 {
