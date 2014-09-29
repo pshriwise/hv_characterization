@@ -23,7 +23,7 @@ hexmaker.o:
 
 hv_mesh: hexmaker.o
 
-	$(CC) create_hv_mesh.cpp hexmaker.o -o create_hv_mesh $(INCLUDE_DIRS) $(LIBS) 
+	$(CC) create_hv_mesh.cpp create_hv_mesh.hpp hexmaker.o -o create_hv_mesh $(INCLUDE_DIRS) $(LIBS) 
 
 scripts: sweep
 
