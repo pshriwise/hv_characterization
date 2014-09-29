@@ -24,6 +24,9 @@ hexmaker.o:
 hv_mesh_gen: hexmaker.o
 	$(CC) hv_mesh_gen.cpp $(INCLUDE_DIRS) $(LIBS) -c
 
+plot_script:
+	paste params.dat data.dat > all.dat
+
 clean: 
 	mv cube.h5m cube.saf
 	rm -f *.dat sweep create_hv_mesh sweep_param_space *.h5m *.vtk *.stl *~ *.p *.o
