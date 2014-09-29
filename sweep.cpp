@@ -16,8 +16,10 @@ int main(int argc, char** argv)
   gnuplot_script();
   std::ofstream data_file, param_file;
   
-  param_file.open("params1.dat");
-  data_file.open("data1.dat");
+  param_file.open("params.dat");
+  data_file.open("data.dat");
+  //start the data file with an empty line to make the future paste easier
+  data_file << std::endl;
   //get the mesh ready_using MeshKit (easier for manipulating meshes)
 
   param_file << 0;
