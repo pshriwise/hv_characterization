@@ -12,16 +12,19 @@ LIBS = -L/home/shriwise/dagmc_blds/moabs/lib/ -lMOAB -ldagmc \
 
 all: build
 
-build: sweep hv_mesh_gen
+build: sweep write_obbs
 
 
-sweep: hexmaker.o hv_mesh_gen
+sweep: hexmaker.o hv_mesh_gen.o
 	$(CC) sweep.cpp hv_mesh_gen.o hexmaker.o -o sweep $(INCLUDE_DIRS) $(LIBS)
+
+write_obbs: hexmaker.o hv_mesh_gen.o
+	$(CC) write_obbs.cpp hv_mesh_gen.o hexmaker.o -o write_obbs $(INCLUDE_DIRS) $(LIBS)
 
 hexmaker.o:
 	$(CC) hexmaker.cpp $(INCLUDE_DIRS) $(LIBS) -c -o hexmaker.o
 
-hv_mesh_gen: hexmaker.o
+hv_mesh_gen.o: hexmaker.o
 	$(CC) hv_mesh_gen.cpp $(INCLUDE_DIRS) $(LIBS) -c
 
 plot_datafile:
