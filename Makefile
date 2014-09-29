@@ -22,7 +22,7 @@ hexmaker.o:
 	$(CC) hexmaker.cpp $(INCLUDE_DIRS) $(LIBS) -c -o hexmaker.o
 
 hv_mesh_gen: hexmaker.o
-	$(CC) hv_mesh_gen.cpp hv_mesh_gen.hpp $(INCLUDE_DIRS) $(LIBS) -c
+	$(CC) hv_mesh_gen.cpp $(INCLUDE_DIRS) $(LIBS) -c
 
 clean: 
 	mv cube.h5m cube.saf
