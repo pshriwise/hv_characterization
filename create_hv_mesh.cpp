@@ -83,7 +83,8 @@ inline void RNDVEC(CartVect& uvw, double &az)
   double phi = denomPI * rand();
   uvw[0] = cos(theta)*sin(phi);
   uvw[1] = sin(theta)*sin(phi);
-  uvw[1] = cos(phi);
+  uvw[2] = cos(phi);
+
 }
 
 
@@ -99,7 +100,7 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
 
 int main(int argc, char **argv)
 {
-
+  /*
   //hangle arguments
   if( 3 != argc  ) 
     {
@@ -109,54 +110,87 @@ int main(int argc, char **argv)
       std::cout << "$ ./create_hv_mesh <A_f> <n>" << std::endl;
       return 0;
     }
-
-  double A_f = atof(argv[1]);
-  //make sure the input of A_f is valid
-  if( 1 <= A_f ){ std::cout << "Area fraction A_f must be less than 1." << std::endl; return 0; }
-  int valence = atoi( argv[2] );
-
-
+  */
+  double A_f = 0;
+  int valence = 0;
+  
+  std::ofstream data_file, param_file;
+  
+  param_file.open("params1.dat");
+  data_file.open("data1.dat");
   //get the mesh ready_using MeshKit (easier for manipulating meshes)
   mk = new MKCore();
 
-  prep_mesh( A_f, valence);
+  param_file << 0;
+
+  int area_intervals = 10;
+  int valence_intervals = 3*10;
+  double max_A_f = 1.0/6.0;
+  int max_n = 1e5;
+
+  for(unsigned int i=1; i < area_intervals; i++)
+    {
+
+      A_f = (double)i * ( max_A_f / area_intervals);
+      //write this value to params file everytime
+
+      for(unsigned int j=1; j < valence_intervals; j++)
+	{
+	  valence = (double)j * ( max_n / valence_intervals );
+	  //the first time we go through the inner loop, 
+	  //write all of the valence values
+	  if ( 1 == i ) param_file << "\t" << valence << "\t";
 
 
-  ////////////// START OF MOAB STUFF \\\\\\\\\\\\\\\\\\\\\\\\
+	  prep_mesh( A_f, valence);
 
-  //now we'll try to load this mesh-file into a dagmc instance
-  moab::DagMC *dag = moab::DagMC::instance();
+	  ////////////// START OF MOAB STUFF \\\\\\\\\\\\\\\\\\\\\\\	\
+	  
+	  //now we'll try to load this mesh-file into a dagmc instance
+	  moab::DagMC *dag = moab::DagMC::instance();
 
-  moab::ErrorCode result;
-  //try loading the file 
-  result = dag->load_file( "cube_mod.h5m" );
-  if( MB_SUCCESS != result) return 1;
+	  moab::ErrorCode result;
+	  //try loading the file 
+	  result = dag->load_file( "cube_mod.h5m" );
+	  if( MB_SUCCESS != result) return 1;
 
-  //generate the OBB tree
-  result = dag->init_OBBTree();
-  if( MB_SUCCESS != result) return 1;
+	  //generate the OBB tree
+	  result = dag->init_OBBTree();
+	  if( MB_SUCCESS != result) return 1;
 
-  //get all of the volumes in the dagmc instance
-  moab::Range vols;
-  result = get_volumes( dag->moab_instance(), vols);
-  if( MB_SUCCESS != result) return 1; 
+	  //get all of the volumes in the dagmc instance
+	  moab::Range vols;
+	  result = get_volumes( dag->moab_instance(), vols);
+	  if( MB_SUCCESS != result) return 1; 
+	  
+	  //write the obbs to a new set of files based on depth in the tree
+	  std::string dum = "test";
+	  result = write_obb_mesh( dag, vols[0], dum);
+	  if( MB_SUCCESS != result) return 1;  
+	  
+	  
+	  //analyze mesh here
+	  double avg_fire_time;
+	  CartVect source;
+	  source[0] = 0; source [1] = 0; source [2] = 0;
+	  //call into the new functions for firing random rays and get the avg time
+	  fire_rand_rays( dag, vols[0], 100000, avg_fire_time, source);
+	  //write time to data file
+	  
+	  std::cout << "The average fire time for this mesh was: " << avg_fire_time << "s" << std::endl;
 
-  //write the obbs to a new set of files based on depth in the tree
-  std::string dum = "test";
-  result = write_obb_mesh( dag, vols[0], dum);
-  if( MB_SUCCESS != result) return 1;  
+	  data_file << avg_fire_time << "\t";
+	  dag->moab_instance()->delete_mesh();
+	}
+      //add a new line to the params file
+      param_file << std::endl;
+      param_file << A_f << "\t";
+      data_file << std::endl;
+    }
 
-
-  //analyze mesh here
-  double avg_fire_time;
-  CartVect source;
-  source[0] = 0; source [1] = 0; source [2] = 0;
-  //call into the new functions for firing random rays and get the avg time
-  fire_rand_rays( dag, vols[0], 1000, avg_fire_time, source);
-  //write time to data file
-
-  std::cout << "The average fire time for this mesh was: " << avg_fire_time << "s" << std::endl;
-
+  param_file.close();
+  data_file.close();
+  
   return 0;
 
 }
@@ -182,7 +216,7 @@ void prep_mesh( double A_f, int valence )
   refacet_surface( hv_surf, A_f, valence );
 
   mk->save_mesh("cube_mod.h5m");
-  mk->moab_instance()->delete_mesh();
+  mk->delete_all();
 
 }
 void refacet_surface( moab::EntityHandle surf, double A_f, int valence )
@@ -603,9 +637,12 @@ moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::s
 void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source)
 {
 
+  srand(12345);
+
   moab::CartVect xyz, uvw;
 
   double ttime1, utime1, stime1, tmem1, ttime2, utime2, stime2, tmem2;
+  get_time_mem(ttime1, utime1, stime1, tmem1);
 
   int random_rays_missed = 0; 
 
@@ -613,6 +650,10 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
   double dist;
   moab::OrientedBoxTreeTool::TrvStats trv_stats;
 
+  //start timer
+  std::clock_t start_time, end_time;
+
+  start_time = std::clock();
   for (int j = 0; j < num_random_rays; j++) {
     RNDVEC(uvw, location_az);
     
@@ -621,17 +662,20 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
       RNDVEC(uvw, direction_az);
     }
     
-#ifdef DEBUG
-    std::cout << "x,y,z,u,v,w,u^2 + v^2 + w^2 = " << xyz 
-              << " " << uvw << " " << uvw%uvw << std::endl;
-    uavg += uvw[0]; vavg += uvw[1]; wavg += uvw[2];
-#endif
+
+    //    std::cout << "x,y,z,u,v,w,u^2 + v^2 + w^2 = " << xyz 
+    //        << " " << uvw << " " << uvw%uvw << std::endl;
+    //uavg += uvw[0]; vavg += uvw[1]; wavg += uvw[2];
+
     // added ray orientation
     dagi->ray_fire(vol, xyz.array(), uvw.array(), dum, dist, NULL, 0, 1, &trv_stats );
     
     if( dum == 0){ random_rays_missed++; }
     
   }
+  //end timer 
+  end_time = std::clock();
+
   get_time_mem(ttime2, utime2, stime2, tmem1);
   double timewith = ttime2 - ttime1;
   
@@ -663,7 +707,8 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
 	      << (timewith - timewithout) / num_random_rays << " sec" << std::endl;
   }
  
-  avg_fire_time = (timewith - timewithout) / num_random_rays;; 
+  avg_fire_time = (end_time - start_time) / (double)(CLOCKS_PER_SEC/1000); 
+  std::cout << "My timer says: " << avg_fire_time << "ms" << std::endl;
 }
 
 
