@@ -81,6 +81,9 @@ moab::ErrorCode get_volumes( moab::Interface* mb, moab::Range &volumes);
 
 void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source);
 
+
+moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_time );
+
 int main(int argc, char **argv)
 {
   /*
@@ -122,51 +125,15 @@ int main(int argc, char **argv)
 	  valence = (double)j * ( max_n / valence_intervals );
 	  //the first time we go through the inner loop, 
 	  //write all of the valence values
+
 	  if ( 1 == i ) param_file << "\t" << valence << "\t";
 
+	  double fire_time = 0;
+	  test_hv_cube_mesh( A_f, valence, fire_time);
+	  data_file << std::endl;
 
-	  prep_mesh( A_f, valence);
-
-	  ////////////// START OF MOAB STUFF \\\\\\\\\\\\\\\\\\\\\\\	\
-	  
-	  //now we'll try to load this mesh-file into a dagmc instance
-	  moab::DagMC *dag = moab::DagMC::instance();
-
-	  moab::ErrorCode result;
-	  //try loading the file 
-	  result = dag->load_file( "cube_mod.h5m" );
-	  if( MB_SUCCESS != result) return 1;
-
-	  //generate the OBB tree
-	  result = dag->init_OBBTree();
-	  if( MB_SUCCESS != result) return 1;
-
-	  //get all of the volumes in the dagmc instance
-	  moab::Range vols;
-	  result = get_volumes( dag->moab_instance(), vols);
-	  if( MB_SUCCESS != result) return 1; 
-	  
-	  //write the obbs to a new set of files based on depth in the tree
-	  std::string dum = "test";
-	  result = write_obb_mesh( dag, vols[0], dum);
-	  if( MB_SUCCESS != result) return 1;  
-	  
-	  
-	  //analyze mesh here
-	  double avg_fire_time;
-	  CartVect source;
-	  source[0] = 0; source [1] = 0; source [2] = 0;
-	  //call into the new functions for firing random rays and get the avg time
-	  fire_rand_rays( dag, vols[0], 100000, avg_fire_time, source);
-	  //write time to data file
-	  
-	  std::cout << "The average fire time for this mesh was: " << avg_fire_time << "s" << std::endl;
-
-	  data_file << avg_fire_time << "\t";
-	  dag->moab_instance()->delete_mesh();
 	}
 
-      //add a new line to the params file
       param_file << std::endl;
       param_file << A_f << "\t";
       data_file << std::endl;
@@ -179,6 +146,45 @@ int main(int argc, char **argv)
 
 }
 
+
+moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_time )
+{
+
+	  prep_mesh( A_f, valence);
+
+	  ////////////// START OF MOAB STUFF \\\\\\\\\\\\\\\\\\\\\\\	\
+	  
+	  //now we'll try to load this mesh-file into a dagmc instance
+	  moab::DagMC *dag = moab::DagMC::instance();
+
+	  moab::ErrorCode result;
+	  //try loading the file 
+	  result = dag->load_file( "cube_mod.h5m" );
+	  if( MB_SUCCESS != result) return MB_FAILURE;
+
+	  //generate the OBB tree
+	  result = dag->init_OBBTree();
+	  if( MB_SUCCESS != result) return MB_FAILURE;
+
+	  //get all of the volumes in the dagmc instance
+	  moab::Range vols;
+	  result = get_volumes( dag->moab_instance(), vols);
+	  if( MB_SUCCESS != result) return MB_FAILURE; 
+	  
+	  //analyze mesh here
+	  double avg_fire_time;
+	  CartVect source;
+	  source[0] = 0; source [1] = 0; source [2] = 0;
+	  //call into the new functions for firing random rays and get the avg time
+	  fire_rand_rays( dag, vols[0], 100000, avg_fire_time, source);
+	  //write time to data file
+	  
+	  std::cout << "The average fire time for this mesh was: " << avg_fire_time << "s" << std::endl;
+	  ray_fire_time = avg_fire_time;
+	  
+	  return MB_SUCCESS;
+
+}
 
 void prep_mesh( double A_f, int valence )
 {
