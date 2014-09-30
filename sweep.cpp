@@ -4,11 +4,30 @@
 #include <iostream>
 #include <fstream>
 #include "hv_mesh_gen.hpp"
+#include "ProgOptions.hpp"
 
 void gnuplot_script();
 
 int main(int argc, char** argv)
 {
+
+  int area_intervals = 10;
+  int valence_intervals = 4*area_intervals;
+  double max_A_f;
+  int max_n;
+
+
+  ProgOptions po("sweep: a program for sweeping two parameter spaces for a manually modified high-valence mesh");
+
+  po.addRequiredArg<double>( "af", "Fraction of the cube surface area that should be made high-valence.", &max_A_f);
+
+  po.addRequiredArg<int>( "v", "Valence of the high-valence region", &max_n);
+
+  po.addOpt<int>( "af_ints", "Number of intervals for the Area fraction param", &area_intervals );
+
+  po.addOpt<int>( "v_ints", "Number of intervals for the valence param", &valence_intervals);
+
+  po.parseCommandLine( argc, argv );
 
   double A_f = 0;
   int valence = 0;
@@ -24,10 +43,6 @@ int main(int argc, char** argv)
 
   param_file << 0;
 
-  int area_intervals = 10;
-  int valence_intervals = 4*area_intervals;
-  double max_A_f = 1.0/6.0;
-  int max_n = 1e6;
 
   for(unsigned int i=1; i < area_intervals; i++)
     {
