@@ -106,7 +106,7 @@ ErrorCode HexMaker::write_to_files( std::string base_filename )
 	  
 	  std::ostringstream filename;
 	  filename << base_filename << "_";
-	  filename << curr_depth << ".h5m";
+	  filename << curr_depth << ".vtk";
 	  
 	  rval = mbi2->write_mesh( &(filename.str()[0]) , &temp_set, 1 );
 	  assert( MB_SUCCESS == rval );
