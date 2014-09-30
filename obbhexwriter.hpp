@@ -9,7 +9,7 @@
 
 using namespace moab;
 
-class HexWriter : public moab::OrientedBoxTreeTool::Op
+class OBBHexWriter : public moab::OrientedBoxTreeTool::Op
 {
 
 
@@ -27,10 +27,10 @@ private:
 public:
 
   //constructor declaration
-  HexWriter( OrientedBoxTreeTool *tool_ptr, Interface* interface_ptr );
+  OBBHexWriter( OrientedBoxTreeTool *tool_ptr, Interface* interface_ptr );
 
   //destructor declaration
-  ~HexWriter();
+  ~OBBHexWriter();
 
   // nothing special about the leaves for this op, do nothing
   ErrorCode leaf( EntityHandle node );

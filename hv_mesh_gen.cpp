@@ -490,7 +490,7 @@ moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::s
   //make a new moab core for the box hexes
   moab::Core mbi2;
 
-  HexWriter hw( obbtool, &mbi2 );
+  OBBHexWriter hw( obbtool, &mbi2 );
 
   moab::OrientedBoxTreeTool::TrvStats tree_stats;
 

@@ -1,21 +1,21 @@
 
-#include "hexwriter.hpp"
+#include "obbhexwriter.hpp"
 #include "moab/Types.hpp"
 #include "meshkit/MKCore.hpp"
 
 using namespace moab;
 
-HexWriter::HexWriter( OrientedBoxTreeTool *tool_ptr, Interface* interface_ptr )
+OBBHexWriter::OBBHexWriter( OrientedBoxTreeTool *tool_ptr, Interface* interface_ptr )
   : tool(tool_ptr), mbi2(interface_ptr) {}
 
-HexWriter::~HexWriter() {};
+OBBHexWriter::~OBBHexWriter() {};
 
 // nothing special about the leaves for this op, do nothing
-ErrorCode HexWriter::leaf( EntityHandle node ) { return MB_SUCCESS; };
+ErrorCode OBBHexWriter::leaf( EntityHandle node ) { return MB_SUCCESS; };
 
 // a visit to a node, will create an OrientedBox object for that node, get a hex from that box and tag it with 
 // an integer tag representing it's depth in the tree, and add it to the list of *hexes* for this tree
-ErrorCode HexWriter::visit( EntityHandle node,
+ErrorCode OBBHexWriter::visit( EntityHandle node,
 			   int depth, 
 			   bool& descend)
 {
@@ -54,7 +54,7 @@ ErrorCode HexWriter::visit( EntityHandle node,
 //this function will go through the hexes found for the tree tool of this class
 //and write them to file based on their depth in the tree
 // filename formats: base_filename + "_" + depth_value + ".h5m"
-ErrorCode HexWriter::write_to_files( std::string base_filename )
+ErrorCode OBBHexWriter::write_to_files( std::string base_filename )
 {
   
   ErrorCode rval; 
