@@ -12,8 +12,7 @@ LIBS = -L/home/shriwise/dagmc_blds/moabs/lib/ -lMOAB -ldagmc \
 
 all: build
 
-build: sweep write_obbs
-
+build: sweep write_obbs hv_cube
 
 sweep: hexmaker.o hv_mesh_gen.o
 	$(CC) sweep.cpp hv_mesh_gen.o hexmaker.o -o sweep $(INCLUDE_DIRS) $(LIBS)
