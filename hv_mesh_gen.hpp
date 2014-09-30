@@ -14,7 +14,7 @@
 #include "gen.hpp"
 #include "DagMC.hpp"
 #include "moab/OrientedBoxTreeTool.hpp"
-#include "hexmaker.hpp"
+#include "hexwriter.hpp"
 
 
 //timing includes

@@ -14,19 +14,19 @@ all: build
 
 build: sweep write_obbs hv_cube
 
-sweep: hexmaker.o hv_mesh_gen.o
-	$(CC) sweep.cpp hv_mesh_gen.o hexmaker.o -o sweep $(INCLUDE_DIRS) $(LIBS)
+sweep: hexwriter.o hv_mesh_gen.o
+	$(CC) sweep.cpp hv_mesh_gen.o hexwriter.o -o sweep $(INCLUDE_DIRS) $(LIBS)
 
-write_obbs: hexmaker.o hv_mesh_gen.o
-	$(CC) write_obbs.cpp hv_mesh_gen.o hexmaker.o -o write_obbs $(INCLUDE_DIRS) $(LIBS)
+write_obbs: hexwriter.o hv_mesh_gen.o
+	$(CC) write_obbs.cpp hv_mesh_gen.o hexwriter.o -o write_obbs $(INCLUDE_DIRS) $(LIBS)
 
-hv_cube: hv_mesh_gen.o hexmaker.o
-	$(CC) hv_cube.cpp hv_mesh_gen.o hexmaker.o -o hv_cube $(INCLUDE_DIRS) $(LIBS)
+hv_cube: hv_mesh_gen.o hexwriter.o
+	$(CC) hv_cube.cpp hv_mesh_gen.o hexwriter.o -o hv_cube $(INCLUDE_DIRS) $(LIBS)
 
-hexmaker.o:
-	$(CC) hexmaker.cpp $(INCLUDE_DIRS) $(LIBS) -c -o hexmaker.o
+hexwriter.o:
+	$(CC) hexwriter.cpp $(INCLUDE_DIRS) $(LIBS) -c -o hexwriter.o
 
-hv_mesh_gen.o: hexmaker.o
+hv_mesh_gen.o: hexwriter.o
 	$(CC) hv_mesh_gen.cpp $(INCLUDE_DIRS) $(LIBS) -c
 
 plot_datafile:

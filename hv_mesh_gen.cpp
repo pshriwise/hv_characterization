@@ -490,15 +490,15 @@ moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::s
   //make a new moab core for the box hexes
   moab::Core mbi2;
 
-  HexMaker op1( obbtool, &mbi2 );
+  HexWriter hw( obbtool, &mbi2 );
 
   moab::OrientedBoxTreeTool::TrvStats tree_stats;
 
-  rval = obbtool->preorder_traverse( root, op1, &tree_stats );
+  rval = obbtool->preorder_traverse( root, hw, &tree_stats );
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
 
-  rval = op1.write_to_files( base_filename );
+  rval = hw.write_to_files( base_filename );
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
 
