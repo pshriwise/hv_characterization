@@ -25,9 +25,9 @@ int main(int argc, char** argv)
   param_file << 0;
 
   int area_intervals = 10;
-  int valence_intervals = 3*10;
+  int valence_intervals = 4*area_intervals;
   double max_A_f = 1.0/6.0;
-  int max_n = 1e5;
+  int max_n = 1e6;
 
   for(unsigned int i=1; i < area_intervals; i++)
     {
