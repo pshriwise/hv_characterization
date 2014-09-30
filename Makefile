@@ -21,6 +21,9 @@ sweep: hexmaker.o hv_mesh_gen.o
 write_obbs: hexmaker.o hv_mesh_gen.o
 	$(CC) write_obbs.cpp hv_mesh_gen.o hexmaker.o -o write_obbs $(INCLUDE_DIRS) $(LIBS)
 
+hv_cube: hv_mesh_gen.o hexmaker.o
+	$(CC) hv_cube.cpp hv_mesh_gen.o hexmaker.o -o hv_cube $(INCLUDE_DIRS) $(LIBS)
+
 hexmaker.o:
 	$(CC) hexmaker.cpp $(INCLUDE_DIRS) $(LIBS) -c -o hexmaker.o
 
@@ -32,5 +35,5 @@ plot_datafile:
 
 clean: 
 	mv cube.h5m cube.saf
-	rm -f sweep write_obbs create_hv_mesh sweep_param_space .#* *# *.h5m *.vtk *.stl *~ *.p *.o
+	rm -f sweep write_obbs create_hv_mesh hv_cube .#* *# *.h5m *.vtk *.stl *~ *.p *.o
 	mv cube.saf cube.h5m
