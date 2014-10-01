@@ -21,8 +21,10 @@ private:
   //unless it is desired that the box hexes are added to that instance
   Interface *mbi2;
   std::vector<EntityHandle> hexes;
+  std::map< EntityHandle, std::vector<EntityHandle> > tri_map;
   Tag depth_tag;
 
+  ErrorCode transfer_tri_inst( Interface* orig_inst, Interface* new_inst, std::vector<EntityHandle> &tris );
 
 public:
 
