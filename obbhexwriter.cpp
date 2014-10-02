@@ -188,35 +188,37 @@ ErrorCode OBBHexWriter::write_to_files( std::string base_filename )
 	  //clear the meshset out and fill it with triangles
 	  rval = mbi2->clear_meshset( &temp_set, 1);
 	  assert( MB_SUCCESS == rval );
-
-	  //fill w/ triangles
-	  for(std::vector<EntityHandle>::iterator i = to_write.begin();
-	      i != to_write.end(); i++)
+	  
+	  //for every box at this depth, write a new file w the box and the tris it contains
+	  for(unsigned int i = 0 ; i < to_write.size(); i++)
 	    {
-	      if( 0 != tri_map[*i].size()) 
-		{
-	      rval = mbi2->add_entities( temp_set, &(tri_map[*i][0]), tri_map[*i].size());
+
+	      EntityHandle this_hex = to_write[i];
+	      std::cout << this_hex << std::endl;
+	      std::cout << tri_map[this_hex].size() << std::endl;
+
+	      rval = mbi2->add_entities( temp_set, &this_hex, 1 );
 	      assert( MB_SUCCESS == rval );
-	      if( MB_SUCCESS != rval ) return rval; 
-		}
-	      else continue;
 
-	    }
+	  
+	      rval = mbi2->add_entities( temp_set, &(tri_map[this_hex][0]), tri_map[this_hex].size());
+	      assert( MB_SUCCESS == rval );
 
-	  std::ostringstream filename1;
-	  filename1 << base_filename << "_tris_";
-	  filename1 << curr_depth << ".vtk";
-
-	  //check to make sure there's something in the meshset?
-	  std::vector<EntityHandle> test_for_ents;
-	  rval = mbi2->get_entities_by_type( temp_set,  MBTRI, test_for_ents);
-	  assert( MB_SUCCESS == rval );
-	  if( 0 != test_for_ents.size() )
-	    {
+	      std::ostringstream filename1;
+	      filename1 << base_filename << "_tris_";
+	      filename1 << curr_depth << "_" << i <<".vtk";
+	      
 	      rval = mbi2->write_mesh( &(filename1.str()[0]) , &temp_set, 1 );
 	      assert( MB_SUCCESS == rval );
 	      if( MB_SUCCESS != rval ) return rval; 
+
+	      //clear out meshset so we aren't accumulating triangles and hexes
+	      rval = mbi2->clear_meshset( &temp_set, 1);
+	      assert( MB_SUCCESS == rval );
+	      
+	      
 	    }
+
 
 
 	}
