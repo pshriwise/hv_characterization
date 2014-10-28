@@ -5,8 +5,8 @@
 
 using namespace moab;
 
-OBBHexWriter::OBBHexWriter( OrientedBoxTreeTool *tool_ptr, Interface* interface_ptr )
-  : tool(tool_ptr), mbi2(interface_ptr) {}
+OBBHexWriter::OBBHexWriter( OrientedBoxTreeTool *tool_ptr, Interface* interface_ptr, bool write_tris )
+  : tool(tool_ptr), mbi2(interface_ptr), w_tris(write_tris) {}
 
 OBBHexWriter::~OBBHexWriter() {};
 
@@ -29,17 +29,6 @@ ErrorCode OBBHexWriter::visit( EntityHandle node,
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
 
-
-  //get the triangles contained by this node
-  std::vector<EntityHandle> tris; 
-  
-  rval = tool->get_moab_instance()->get_entities_by_type( node, MBTRI, tris);
-  assert(MB_SUCCESS == rval );
-  if ( MB_SUCCESS != rval ) return rval; 
-  
-  rval = transfer_tri_inst( tool->get_moab_instance(), mbi2, tris);
-  assert( MB_SUCCESS == rval );
-
   OrientedBox box;
   rval = tool->box( node, box );
   assert(MB_SUCCESS == rval );
@@ -53,11 +42,25 @@ ErrorCode OBBHexWriter::visit( EntityHandle node,
   rval = mbi2-> tag_set_data( depth_tag, &new_hex, 1, ptr);
   assert( MB_SUCCESS == rval );
   if( MB_SUCCESS != rval ) return rval; 
+
+  if(w_tris)
+    {
+    //get the triangles contained by this node
+    std::vector<EntityHandle> tris; 
+    
+    rval = tool->get_moab_instance()->get_entities_by_type( node, MBTRI, tris);
+    assert(MB_SUCCESS == rval );
+    if ( MB_SUCCESS != rval ) return rval; 
+    
+    rval = transfer_tri_inst( tool->get_moab_instance(), mbi2, tris);
+    assert( MB_SUCCESS == rval );
   
-  //add the data to the class attributes
-  tri_map[new_hex] = tris;
+    //add the data to the class attributes
+    tri_map[new_hex] = tris;
+    }
+  
+  //add the hex and go to the next tree depth
   hexes.push_back(new_hex);
-  
   descend = true;    
   
   return MB_SUCCESS;
@@ -175,7 +178,6 @@ ErrorCode OBBHexWriter::write_to_files( std::string base_filename )
 	  if( MB_SUCCESS != rval ) return rval; 
 	  
 	  //write this meshset to file, appending the current depth then the file suffix
-	  
 	  std::ostringstream filename;
 	  filename << base_filename << "_";
 	  filename << curr_depth << ".vtk";
@@ -188,40 +190,41 @@ ErrorCode OBBHexWriter::write_to_files( std::string base_filename )
 	  //clear the meshset out and fill it with triangles
 	  rval = mbi2->clear_meshset( &temp_set, 1);
 	  assert( MB_SUCCESS == rval );
-	  
-	  //for every box at this depth, write a new file w the box and the tris it contains
-	  for(unsigned int i = 0 ; i < to_write.size(); i++)
+
+	  if(w_tris)
 	    {
-
-	      EntityHandle this_hex = to_write[i];
-	      std::cout << this_hex << std::endl;
-	      std::cout << tri_map[this_hex].size() << std::endl;
-
-	      rval = mbi2->add_entities( temp_set, &this_hex, 1 );
-	      assert( MB_SUCCESS == rval );
-
-	  
-	      rval = mbi2->add_entities( temp_set, &(tri_map[this_hex][0]), tri_map[this_hex].size());
-	      assert( MB_SUCCESS == rval );
-
-	      std::ostringstream filename1;
-	      filename1 << base_filename << "_tris_";
-	      filename1 << curr_depth << "_" << i <<".vtk";
-	      
-	      rval = mbi2->write_mesh( &(filename1.str()[0]) , &temp_set, 1 );
-	      assert( MB_SUCCESS == rval );
-	      if( MB_SUCCESS != rval ) return rval; 
-
-	      //clear out meshset so we aren't accumulating triangles and hexes
-	      rval = mbi2->clear_meshset( &temp_set, 1);
-	      assert( MB_SUCCESS == rval );
-	      
-	      
+	      //for every box at this depth, write a new file w the box and the tris it contains
+	      for(unsigned int i = 0 ; i < to_write.size(); i++)
+		{
+		  
+		  EntityHandle this_hex = to_write[i];
+		  std::cout << this_hex << std::endl;
+		  std::cout << tri_map[this_hex].size() << std::endl;
+		  
+		  rval = mbi2->add_entities( temp_set, &this_hex, 1 );
+		  assert( MB_SUCCESS == rval );
+		  
+		  
+		  rval = mbi2->add_entities( temp_set, &(tri_map[this_hex][0]), tri_map[this_hex].size());
+		  assert( MB_SUCCESS == rval );
+		  
+		  std::ostringstream filename1;
+		  filename1 << base_filename << "_tris_";
+		  filename1 << curr_depth << "_" << i <<".vtk";
+		  
+		  rval = mbi2->write_mesh( &(filename1.str()[0]) , &temp_set, 1 );
+		  assert( MB_SUCCESS == rval );
+		  if( MB_SUCCESS != rval ) return rval; 
+		  
+		  //clear out meshset so we aren't accumulating triangles and hexes
+		  rval = mbi2->clear_meshset( &temp_set, 1);
+		  assert( MB_SUCCESS == rval );
+		  
+		}
 	    }
 
-
-
 	}
+
       //now clear out the to_write vector and the meshset
       to_write.clear();
       

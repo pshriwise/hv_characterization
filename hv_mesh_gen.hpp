@@ -74,7 +74,7 @@ inline void RNDVEC(CartVect& uvw, double &az)
 }
 
 
-moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename);
+moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename, bool write_tris = false);
 
 moab::ErrorCode get_volumes( moab::Interface* mb, moab::Range &volumes);
 

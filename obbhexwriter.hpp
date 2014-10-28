@@ -20,6 +20,7 @@ private:
   //note: this should probably be a different interface than the original instance
   //unless it is desired that the box hexes are added to that instance
   Interface *mbi2;
+  bool w_tris;
   std::vector<EntityHandle> hexes;
   std::map< EntityHandle, std::vector<EntityHandle> > tri_map;
   Tag depth_tag;
@@ -29,7 +30,7 @@ private:
 public:
 
   //constructor declaration
-  OBBHexWriter( OrientedBoxTreeTool *tool_ptr, Interface* interface_ptr );
+  OBBHexWriter( OrientedBoxTreeTool *tool_ptr, Interface* interface_ptr, bool write_tris = false );
 
   //destructor declaration
   ~OBBHexWriter();

@@ -470,7 +470,7 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
  }
 
 
-moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename) 
+moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename, bool write_tris) 
 {
 
   moab::ErrorCode rval; 
@@ -490,7 +490,7 @@ moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::s
   //make a new moab core for the box hexes
   moab::Core mbi2;
 
-  OBBHexWriter hw( obbtool, &mbi2 );
+  OBBHexWriter hw( obbtool, &mbi2, write_tris );
 
   moab::OrientedBoxTreeTool::TrvStats tree_stats;
 

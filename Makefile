@@ -14,10 +14,10 @@ all: build
 
 build: sweep write_obbs hv_cube
 
-sweep: obbhexwriter.o hv_mesh_gen.o
+sweep: obbhexwriter.o hv_mesh_gen.o ProgOptions.o
 	$(CC) sweep.cpp hv_mesh_gen.o obbhexwriter.o -o sweep $(INCLUDE_DIRS) $(LIBS)
 
-write_obbs: obbhexwriter.o hv_mesh_gen.o
+write_obbs: obbhexwriter.o hv_mesh_gen.o ProgOptions.o
 	$(CC) write_obbs.cpp hv_mesh_gen.o obbhexwriter.o -o write_obbs $(INCLUDE_DIRS) $(LIBS)
 
 hv_cube: hv_mesh_gen.o obbhexwriter.o
@@ -28,6 +28,9 @@ obbhexwriter.o:
 
 hv_mesh_gen.o: obbhexwriter.o
 	$(CC) hv_mesh_gen.cpp $(INCLUDE_DIRS) $(LIBS) -c
+
+ProgOptions.o:
+	$(CC) ProgOptions.cpp -c -o ProgOptions.o
 
 plot_datafile:
 	paste params.dat data.dat > all.dat

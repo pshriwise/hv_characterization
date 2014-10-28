@@ -2,27 +2,29 @@
 #include <iostream>
 #include "hv_mesh_gen.hpp"
 #include "DagMC.hpp"
+#include "ProgOptions.hpp"
 
 int main( int argc, char** argv) 
 {
-  //hangle arguments
-  if( 2 != argc )
-    {
-      std::cout << "To write the oriented bounding boxes of a dagmc .h5m file";
-      std::cout << "in a .vtk format:"<< std::endl;
-      std::cout << "$./write_obbs <filename.h5m>" << std::endl;
-      return 0;
-    } 
-
 
   //assign the filename
-  char *filename = argv[1];
+  std::string filename;
+  bool write_tris = false; 
+
+  ProgOptions po("Write_Obbs: a program for writing the OBBs of a mesh as hexes in a .vtk format");
+
+  po.addRequiredArg<std::string>("filename", "Mesh file", &filename);
+  
+  po.addOpt<void>( "with-tris", "If included, the program will write the triangles contained by each hex to file.", &write_tris); 
+
+  po.parseCommandLine( argc, argv ); 
+
 
   //start a dagmc instance and load the modified cube file
   moab::DagMC *dag_inst = moab::DagMC::instance();
 
   moab::ErrorCode result;
-  result = dag_inst->load_file( filename );
+  result = dag_inst->load_file( filename.c_str() );
   if( MB_SUCCESS != result) return MB_FAILURE;
   
   //generate the obb tree
@@ -35,7 +37,7 @@ int main( int argc, char** argv)
   
   //now write the OBBs to a set of files based on depth in tree
   std::string base_name = "OBBS";
-  result = write_obb_mesh( dag_inst, vols[0], base_name );
+  result = write_obb_mesh( dag_inst, vols[0], base_name, write_tris );
   if( MB_SUCCESS != result) return MB_FAILURE;
 
   return 0;
