@@ -462,7 +462,7 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
    void* ptr = &dim;
    
    //get all volume meshsets (should only be one)
-   mb->get_entities_by_type_and_tag( 0, MBENTITYSET, &geom_dim, &ptr, 1, volumes);
+   rval = mb->get_entities_by_type_and_tag( 0, MBENTITYSET, &geom_dim, &ptr, 1, volumes);
    assert( MB_SUCCESS == rval);
    if( MB_SUCCESS != rval) return rval; 
 
