@@ -33,7 +33,7 @@ void prep_mesh( double A_f, int valence );
 // creates new facets for the square surface (in const Z-plane) with a high-valence region of size A_f*(surface_area) and a valency of n
 void refacet_surface( moab::EntityHandle surf, double A_f, int valence );
 // returns the verts of an empty square in the center of the surface and surrounds this square w/ triangles in a watertight fashion
-void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts );
+void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts, int axis );
 // creates the triangles for the high-valence area
 void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> box_verts, int n );
 // returns a surface that is constant in Z

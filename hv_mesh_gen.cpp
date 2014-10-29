@@ -101,15 +101,34 @@ void refacet_surface( moab::EntityHandle surf, double A_f, int valence )
  
   //now its time to create an empty middle box using the remaining surface verts
   std::vector<moab::EntityHandle> box;
-  generate_box_space( surf, A_f, box );
+  generate_box_space( surf, A_f, box, 1 );
 
   make_hv_region( surf, box, valence );
 
 }
 
 // returns the verts of an empty box, centered on the origin which is surrounded by triangles
-void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts )
+void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::EntityHandle> &box_verts, int axis )
 {
+  int x_idx, y_idx;
+  //set the indices of the cartesian vectors based on the constant axis for this surface 
+  switch(axis){
+  case 0:
+    x_idx = 1; 
+    y_idx = 2; 
+    break;
+  case 1:
+    x_idx = 0;
+    y_idx = 2; 
+    break; 
+  case 2:
+    x_idx = 0;
+    y_idx = 1;
+    break;
+  default:
+    std::cout << "Value of axis muxt be 0, 1, or 2" << std::endl; 
+    assert(false); 
+  }
 
   std::vector<moab::EntityHandle> corners;
   mk->moab_instance()->get_entities_by_type( surf, MBVERTEX, corners );
@@ -157,20 +176,20 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
       
       //need three cartesian vectors telling us where to put the verts, two for the dam points, one for the inner point.
       MBCartVect to_ewdam, to_nsdam, to_box;
-      to_ewdam[2] = 0; to_nsdam[2] = 0; to_box[2] = 0; //only moving on the x-y plane here
+      to_ewdam[axis] = 0; to_nsdam[axis] = 0; to_box[axis] = 0; //only moving on the x-y plane here
       
       //always want to create this vert
       //using the fact that we're centered on the origin here...
       //x-points
-      if( coords[0] < 0 ){ 
-	to_box[0] = box_bump_dist; }
+      if( coords[x_idx] < 0 ){ 
+	to_box[x_idx] = box_bump_dist; }
       else  { 
-	to_box[0] = -box_bump_dist; }
+	to_box[x_idx] = -box_bump_dist; }
       //y-points
-      if( coords[1] < 0 ){ 
-	to_box[1]=box_bump_dist; }
+      if( coords[y_idx] < 0 ){ 
+	to_box[y_idx]= box_bump_dist; }
       else  { 
-	to_box[1] = -box_bump_dist; }
+	to_box[y_idx] = -box_bump_dist; }
 
       //create the inner point
       moab::EntityHandle box_vert;
@@ -183,11 +202,11 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
       moab::EntityHandle *nsdam_vert = &ndv, *ewdam_vert = &edv;
 
       //set the north-south dam based on our y location
-      if( coords[1] < 0) { nsdam_vert = &sdv; nsdam = &sd; }
+      if( coords[y_idx] < 0) { nsdam_vert = &sdv; nsdam = &sd; }
       else { nsdam_vert = &ndv; nsdam = &nd; }
 
       //set the east-west dam based on our x location
-      if( coords[0] < 0) { ewdam_vert = &wdv; ewdam = &wd; }
+      if( coords[x_idx] < 0) { ewdam_vert = &wdv; ewdam = &wd; }
       else { ewdam_vert = &edv; ewdam = &ed; }
 
       //////NORTH-SOUTH DAM\\\\\\\
@@ -199,10 +218,10 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
       else {
 	
 	//set the dam coordinates
-	if ( coords[0] < 0 ) to_nsdam[0] = dam_bump_long;
-	else to_nsdam[0] = -dam_bump_long;
-	if ( coords[1] < 0 ) to_nsdam[1] = dam_bump_short;
-	else to_nsdam[1] = -dam_bump_short;
+	if ( coords[x_idx] < 0 ) to_nsdam[x_idx] = dam_bump_long;
+	else to_nsdam[x_idx] = -dam_bump_long;
+	if ( coords[y_idx] < 0 ) to_nsdam[y_idx] = dam_bump_short;
+	else to_nsdam[y_idx] = -dam_bump_short;
 
 	//create the dam vertex 
 	mk->moab_instance()->create_vertex( (coords+to_nsdam).array(), *nsdam_vert);
@@ -221,10 +240,10 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
       else {
 	
 	//set the dam coordinates
-	if ( coords[0] < 0 ) to_ewdam[0] = dam_bump_short;
-	else to_ewdam[0] = -dam_bump_short;
-	if ( coords[1] < 0 ) to_ewdam[1] = dam_bump_long;
-	else to_ewdam[1] = -dam_bump_long;
+	if ( coords[x_idx] < 0 ) to_ewdam[0] = dam_bump_short;
+	else to_ewdam[x_idx] = -dam_bump_short;
+	if ( coords[y_idx] < 0 ) to_ewdam[1] = dam_bump_long;
+	else to_ewdam[y_idx] = -dam_bump_long;
 
 	//create the dam vertex 
 	mk->moab_instance()->create_vertex( (coords+to_ewdam).array(), *ewdam_vert);
@@ -267,7 +286,7 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
 
       MBCartVect v_coords;
       mk->moab_instance()->get_coords( &(box[i]), 1, v_coords.array() );
-      double x = v_coords[0]; double y = v_coords[1];
+      double x = v_coords[x_idx]; double y = v_coords[y_idx];
       // again, our surface is cenetered on the origin
       if ( x < 0 && y < 0) ordered_box[0] = box[i];
       else if ( x < 0 && y > 0) ordered_box[1] = box[i];
@@ -371,7 +390,7 @@ void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
       
       //setup a check vector
       MBCartVect check;
-      check [0] = 0; check [1] = 0; check[2] = 1;
+      check [0] = 0; check [1] = 1; check[2] = 0;
       //get the normal for the first triangle on each surface
       
       //get the verts for each triangle and their coordinates
