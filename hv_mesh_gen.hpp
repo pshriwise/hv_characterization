@@ -65,8 +65,8 @@ static const char* pyfile = NULL;
 inline void RNDVEC(CartVect& uvw, double &az) 
 {
   
-  double theta = denom * az * rand();
-  double u = 2*denom*rand() - 1;
+  double theta = (PI/2)*denom*az*rand()+(PI/4);
+  double u = (sqrt(2)/2) - sqrt(2)*denom*rand();
   uvw[0] = sqrt(1-u*u)*cos(theta);
   uvw[1] = sqrt(1-u*u)*sin(theta);
   uvw[2] = u;
