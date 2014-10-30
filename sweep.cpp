@@ -50,7 +50,7 @@ int main(int argc, char** argv)
       A_f = (double)i * ( max_A_f / area_intervals);
       //write this value to params file everytime
 
-      for(unsigned int j=1; j < valence_intervals; j++)
+      for(unsigned int j=0; j < valence_intervals; j++)
 	{
 	  valence = (double)j * ( max_n / valence_intervals );
 	  //the first time we go through the inner loop, 

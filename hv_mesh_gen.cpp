@@ -141,7 +141,7 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
   //now create the vertices for the new regions
   
   //based on surface area, get the length of one of the center-square sides
-  double hv_area = A_f*cube_area; 
+  double hv_area = A_f*cube_area/6; //divide by 6 because this surface represents all surfaces of the cube
   if ( hv_area >= surface_area ) std::cout << "ERROR: Area fraction must be less than 1/6 for now." << std::endl;
   assert( hv_area < surface_area );
   double hv_side = sqrt(hv_area);
@@ -320,8 +320,15 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
 void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> box_verts, int n ) 
 {
 
+
+  //we're asked for 0 triangles in the hv area, return at least one
+  if ( 0 == n )
+    {
+      make_hv_region( surf, box_verts, 1); 
+      return; 
+    }
+
   //start by making a paramaterization of the box diagonal
-  
   //because we know the order of these verts, we can get the diagonal coordinates directly
   MBCartVect sw_coords, ne_coords;
 
