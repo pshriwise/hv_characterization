@@ -8,80 +8,91 @@
 #include "hv_mesh_gen.hpp"
 #include "moab/ProgOptions.hpp"
 
+#include "mpi.h"
+
 void gnuplot_script();
 
 int main(int argc, char** argv)
 {
-  //Mesh Parameters
-  int area_intervals = 10;
-  int valence_intervals = 4*area_intervals;
-  double max_A_f;
-  int max_n;
 
-  //Split Ratio Values
-  double min_wsr, max_wsr;
-  int wsr_intervals;
 
-  ProgOptions po("sweep: a program for sweeping two parameter spaces for a manually modified high-valence mesh");
+  // start MPI
+  MPI_Init(NULL,NULL);
 
-  po.addRequiredArg<double>( "af", "Fraction of the cube surface area that should be made high-valence.", &max_A_f);
+  //
+  int cpu_id,size; // cpu id and world size
+  MPI_Comm_rank(MPI_COMM_WORLD,&cpu_id);
+  MPI_Comm_size(MPI_COMM_WORLD,&size);
 
-  po.addRequiredArg<int>( "v", "Valence of the high-valence region", &max_n);
 
-  po.addOpt<int>( "af_ints", "Number of intervals for the Area fraction param", &area_intervals );
+  int num_tasks;
+  std::vector<double> area_fractions; // list of area fractions
+  std::vector<int> valences; // list of valences
+  std::vector<double> timing;
+ 
 
-  po.addOpt<int>( "v_ints", "Number of intervals for the valence param", &valence_intervals);
-
-  po.addOpt<double>("min_wsr", "Minimum value of the worst-case split ratio. (Used in creation of OBB Trees.)");
-
-  po.addOpt<double>("max_wsr", "Maximum value of the worst-case split ratio. (Used in creation of OBB Trees.)");
-
-  po.addOpt<int>("wsr_ints", "Number of intervals for the worst-case split ratio."); 
-
-  po.parseCommandLine( argc, argv );
-
-  //set defaults for the worst-case split ratio
-  if( !po.getOpt( "min_wsr", &min_wsr ) ) min_wsr = 0.95;
-  if( !po.getOpt( "max_wsr", &max_wsr ) ) max_wsr = 0.95;
-  if( !po.getOpt( "wsr_ints", &wsr_intervals ) ) wsr_intervals = 1;
-  
-  assert( min_wsr <= max_wsr );
-  if (max_wsr == min_wsr)  assert( 1 == wsr_intervals ); 
-
-  
-
-  double A_f = 0;
-  int valence = 0;
-  double wsr = min_wsr;
-
-  std::cout << wsr << std::endl; 
-
-  gnuplot_script();
-  std::ofstream data_file, param_file;
-  
-
-  //loop for the wsr values 
-  for( unsigned int w = 0; w <=wsr_intervals; w++)
+  // if master task do the reading and set up, other wise wait
+  if(cpu_id == 0 )
     {
+      int area_intervals = 10;
+      int valence_intervals = 4*area_intervals;
+      double max_A_f;
+      int max_n;
 
-      wsr = min_wsr + w*((max_wsr-min_wsr)/wsr_intervals);
-      std::ostringstream p_filename, d_filename;
-      p_filename << "params_" << wsr << ".dat";
-      d_filename << "data_" << wsr << ".dat";
+      //Split Ratio Values
+      double min_wsr, max_wsr;
+      int wsr_intervals;
 
-      std::string pfile, dfile; 
-      pfile = p_filename.str(); 
-      dfile = d_filename.str();
-      param_file.open( pfile.c_str() );
-      data_file.open( dfile.c_str() );
+      
+      ProgOptions po("sweep: a program for sweeping two parameter spaces for a manually modified high-valence mesh");
+      
+      po.addRequiredArg<double>( "af", "Fraction of the cube surface area that should be made high-valence.", &max_A_f);
+      
+      po.addRequiredArg<int>( "v", "Valence of the high-valence region", &max_n);
+      
+      po.addOpt<int>( "af_ints", "Number of intervals for the Area fraction param", &area_intervals );
+      
+      po.addOpt<int>( "v_ints", "Number of intervals for the valence param", &valence_intervals);
+
+      po.addOpt<double>("min_wsr", "Minimum value of the worst-case split ratio. (Used in creation of OBB Trees.)");
+
+      po.addOpt<double>("max_wsr", "Maximum value of the worst-case split ratio. (Used in creation of OBB Trees.)");
+
+      po.addOpt<int>("wsr_ints", "Number of intervals for the worst-case split ratio."); 
+
+      po.parseCommandLine( argc, argv );
+
+      //set defaults for the worst-case split ratio
+      if( !po.getOpt( "min_wsr", &min_wsr ) ) min_wsr = 0.95;
+      if( !po.getOpt( "max_wsr", &max_wsr ) ) max_wsr = 0.95;
+      if( !po.getOpt( "wsr_ints", &wsr_intervals ) ) wsr_intervals = 1;
+      
+      assert( min_wsr <= max_wsr );
+      if (max_wsr == min_wsr)  assert( 1 == wsr_intervals ); 
+      
+      
+      
+      double A_f = 0;
+      int valence = 0;
+      double wsr = min_wsr;
+      
+      gnuplot_script();
+      std::ofstream data_file, param_file;
+      
+      //      param_file.open("params.dat");
+      //      data_file.open("data.dat");
       //start the data file with an empty line to make the future paste easier
-      data_file << std::endl;
+      //      data_file << std::endl;
       //get the mesh ready_using MeshKit (easier for manipulating meshes)
       
-      param_file << 0;
+      //      param_file << 0;
+
+
+      // num_jobs
+      num_tasks = (area_intervals-1)*valence_intervals;
+      // precompute inputs
       
-      
-      for(unsigned int i=1; i < area_intervals; i++)
+      for(unsigned int i=0; i < area_intervals; i++)
 	{
 	  
 	  A_f = (double)i * ( max_A_f / area_intervals);
@@ -92,27 +103,70 @@ int main(int argc, char** argv)
 	      valence = (double)j * ( max_n / valence_intervals );
 	      //the first time we go through the inner loop, 
 	      //write all of the valence values
-	      
-	      if ( 1 == i ) param_file << "\t" << valence << "\t";
-	      
-	      double fire_time = 0;
-	      std::cout << "Area fraction: " << A_f << std::endl << "Valence: " << valence << std::endl;
-	      
-	      test_hv_cube_mesh( A_f, valence, fire_time, wsr);
-	      data_file << fire_time << "\t";
-	      
+	      area_fractions.push_back(A_f);
+	      valences.push_back(valence);     
+	      timing.push_back(0.0);     
 	    }
-	  
-	  param_file << std::endl;
-	  param_file << A_f << "\t";
-	  data_file << std::endl;
 	}
-      
-      param_file.close();
-      data_file.close();
-      
+    }
+  else
+    {
+      // slaves do nothing
+      //      continue;
     }
 
+  // synchronize
+  MPI_Barrier(MPI_COMM_WORLD);
+  
+  // share num_tasks
+  MPI_Bcast(&num_tasks,1,MPI_INT,0,MPI_COMM_WORLD);
+  // share area_fractions
+  MPI_Bcast(&area_fractions,num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
+  // share valences
+  MPI_Bcast(&valences,num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
+  // share timing
+  MPI_Bcast(&timing,num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+
+
+      // broadcast these vectors
+      //  broadcast area fractions, valences and timiing
+      
+  //chop up job
+  int num_job_on_proc = num_tasks/size; 
+  int num_task_master = (num_tasks/size) + (num_tasks%size);
+
+  int job_id_start = 0;
+  int job_id_end = 0;
+
+  if ( cpu_id == 0 ) 
+    {
+      job_id_start = 0;
+      job_id_end = num_task_master - 1;
+    }
+  else
+    {
+      job_id_start = num_task_master + ((cpu_id-1)*num_job_on_proc);
+      job_id_end = job_id_start + num_job_on_proc - 1;
+    }
+
+  for ( int i = job_id_start ; i < job_id_end ; i++ )
+    {
+      test_hv_cube_mesh(area_fractions[i] ,valences[i], timing[i]);
+    }
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  
+  // if(cpu_id == 0 )
+  std::vector<double> result(num_tasks);
+
+  MPI_Reduce(&timing,&result,num_tasks,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  
+  // end mpi
+  MPI_Finalize();
+
+  // now do output
+  
   return 0;
 
 

@@ -1,5 +1,6 @@
 
 CC = g++
+MPICC = mpic++
 
 INCLUDE_DIRS = -I/home/shriwise/dagmc_blds/lasso/include \
 	       -I/home/shriwise/dagmc_blds/cgm_dev/include/ \
@@ -18,7 +19,7 @@ test_model: gen_mb_funcs.o ray_fire.o
 	$(CC) test_model.cpp gen_mb_funcs.o ray_fire.o -o test_model $(INCLUDE_DIRS) $(LIBS)
 
 sweep: gen_mb_funcs.o hv_mesh_gen.o ray_fire.o
-	$(CC) sweep.cpp hv_mesh_gen.o gen_mb_funcs.o ray_fire.o -o sweep $(INCLUDE_DIRS) $(LIBS)
+	$(MPICC) sweep.cpp hv_mesh_gen.o gen_mb_funcs.o ray_fire.o -o sweep $(INCLUDE_DIRS) $(LIBS)
 
 write_obbs: obbhexwriter.o gen_mb_funcs.o
 	$(CC) write_obbs.cpp gen_mb_funcs.o obbhexwriter.o -o write_obbs $(INCLUDE_DIRS) $(LIBS)
