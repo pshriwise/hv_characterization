@@ -35,11 +35,12 @@ moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_
 	  ////////////// START OF MOAB STUFF \\\\\\\\\\\\\\\\\\\\\\\	\
 	  
 	  //now we'll try to load this mesh-file into a dagmc instance
-	  moab::DagMC *dag = moab::DagMC::instance();
+	  moab::DagMC *dag = moab::DagMC::instance( mk->moab_instance() );
 
 	  moab::ErrorCode result;
-	  //try loading the file 
-	  result = dag->load_file( "cube_mod.h5m" );
+	  
+	  //load the mesh data from the moab instance into dag
+	  result = dag->load_existing_contents(); 
 	  if( MB_SUCCESS != result) return MB_FAILURE;
 
 	  //generate the OBB tree
@@ -62,8 +63,7 @@ moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_
 	  std::cout << "The average fire time for this mesh was: " << avg_fire_time << "s" << std::endl;
 	  ray_fire_time = avg_fire_time;
 	  
-	  dag->moab_instance()->delete_mesh();
-
+	  mk->delete_all();
 	  return MB_SUCCESS;
 
 }
@@ -79,16 +79,13 @@ void prep_mesh( double A_f, int valence )
   mk->get_entities_by_dimension(2, surfs);
   
   std::cout << "There are " << surfs.size() << " surfaces in this model." << std::endl;
-
+  assert( 6 == surfs.size() ); 
   //Now to find one of the surfaces that is constant in z (for convenience)
   moab::EntityHandle hv_surf;
   get_hv_surf( surfs, hv_surf );
 
   //refacet the surface using the desired area fraction for the hv region
   refacet_surface( hv_surf, A_f, valence );
-
-  mk->save_mesh("cube_mod.h5m");
-  mk->delete_all();
 
 }
 
