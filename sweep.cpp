@@ -92,7 +92,7 @@ int main(int argc, char** argv)
       num_tasks = (area_intervals-1)*valence_intervals;
       // precompute inputs
       
-      for(unsigned int i=0; i < area_intervals; i++)
+      for(unsigned int i=1; i < area_intervals; i++)
 	{
 	  
 	  A_f = (double)i * ( max_A_f / area_intervals);
@@ -120,13 +120,57 @@ int main(int argc, char** argv)
   
   // share num_tasks
   MPI_Bcast(&num_tasks,1,MPI_INT,0,MPI_COMM_WORLD);
-  // share area_fractions
-  MPI_Bcast(&area_fractions,num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
-  // share valences
-  MPI_Bcast(&valences,num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
-  // share timing
-  MPI_Bcast(&timing,num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
+  if (cpu_id != 0 )
+    {
+      area_fractions.resize(num_tasks);
+      valences.resize(num_tasks); 
+      timing.resize(num_tasks);
+    }
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // share area_fractions
+  MPI_Bcast(&area_fractions.front(),num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
+  // share valences
+  MPI_Bcast(&valences.front(),num_tasks,MPI_INT,0,MPI_COMM_WORLD);
+  // share timing
+  MPI_Bcast(&timing.front(),num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
+  //
+  MPI_Barrier(MPI_COMM_WORLD);
+  //std::cout << "ID: " << cpu_id << " num_tasks " << num_tasks << std::endl; 
+  /*
+  if ( cpu_id == 0)
+    {
+  
+      std::cout << "ID: " << cpu_id << " num_tasks " << num_tasks << std::endl; 
+      std::cout << "Area fractions size: " << area_fractions.size() << std::endl; 
+
+      for( unsigned int i = 0; i < num_tasks; i++)
+	std::cout << "ID: " << cpu_id << " Area_fraction: " << area_fractions[i] << " Valence: " << valences[i] << std::endl;
+    }
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
+
+
+  if ( cpu_id == 1)
+    {
+
+      std::cout << "ID: " << cpu_id << " num_tasks " << num_tasks << std::endl; 
+      std::cout << "Area fractions size: " << area_fractions.size() << std::endl; 
+      for( unsigned int i = 0; i < num_tasks; i++)
+	std::cout << "ID: " << cpu_id << " Area_fraction: " << area_fractions[i] << " Valence: " << valences[i] << std::endl;
+
+    }
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  MPI_Finalize();
+ 
+  return 0; 
+  */
+  
 
 
       // broadcast these vectors
@@ -150,7 +194,7 @@ int main(int argc, char** argv)
       job_id_end = job_id_start + num_job_on_proc - 1;
     }
 
-  for ( int i = job_id_start ; i < job_id_end ; i++ )
+  for ( int i = job_id_start ; i <= job_id_end ; i++ )
     {
       test_hv_cube_mesh(area_fractions[i] ,valences[i], timing[i]);
     }
@@ -158,15 +202,29 @@ int main(int argc, char** argv)
   MPI_Barrier(MPI_COMM_WORLD);
   
   // if(cpu_id == 0 )
-  std::vector<double> result(num_tasks);
+  std::vector<double>result(num_tasks);
 
-  MPI_Reduce(&timing,&result,num_tasks,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&timing.front(),&result.front(),num_tasks,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
   
+  
+  // now do output
+
+  if(cpu_id == 0 ) 
+    {   
+      std::ofstream datafile; 
+      datafile.open("data.dat"); 
+      
+      for( unsigned int i = 0; i < area_fractions.size(); i++)
+	datafile << area_fractions[i] << "\t" << valences[i] << "\t" << result[i] << std::endl;
+      datafile.close();
+    }
+  
+  MPI_Barrier(MPI_COMM_WORLD);
+
   // end mpi
   MPI_Finalize();
 
-  // now do output
-  
+
   return 0;
 
 

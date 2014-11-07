@@ -44,6 +44,7 @@ moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_
 
 	  //generate the OBB tree
 	  result = dag->init_OBBTree();
+	  //	  result = dag->init_OBBTree();
 	  if( MB_SUCCESS != result) return MB_FAILURE;
 
 	  //get all of the volumes in the dagmc instance
