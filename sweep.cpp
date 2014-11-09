@@ -28,10 +28,10 @@ int main(int argc, char** argv)
   int num_tasks;
   std::vector<double> area_fractions; // list of area fractions
   std::vector<int> valences; // list of valences
-  std::vector<double> timing;
+  std::vector<double> timing; //vector for results
  
 
-  // if master task do the reading and set up, other wise wait
+  // if master task, do the reading and set up. Otherwise wait
   if(cpu_id == 0 )
     {
       int area_intervals = 10;
@@ -76,22 +76,10 @@ int main(int argc, char** argv)
       int valence = 0;
       double wsr = min_wsr;
       
-      gnuplot_script();
-      std::ofstream data_file, param_file;
-      
-      //      param_file.open("params.dat");
-      //      data_file.open("data.dat");
-      //start the data file with an empty line to make the future paste easier
-      //      data_file << std::endl;
-      //get the mesh ready_using MeshKit (easier for manipulating meshes)
-      
-      //      param_file << 0;
-
-
       // num_jobs
       num_tasks = (area_intervals-1)*valence_intervals;
-      // precompute inputs
-      
+
+      // precompute input values      
       for(unsigned int i=1; i < area_intervals; i++)
 	{
 	  
@@ -105,14 +93,9 @@ int main(int argc, char** argv)
 	      //write all of the valence values
 	      area_fractions.push_back(A_f);
 	      valences.push_back(valence);     
-	      timing.push_back(0.0);     
+	      timing.push_back(0.0);      
 	    }
 	}
-    }
-  else
-    {
-      // slaves do nothing
-      //      continue;
     }
 
   // synchronize
@@ -121,6 +104,7 @@ int main(int argc, char** argv)
   // share num_tasks
   MPI_Bcast(&num_tasks,1,MPI_INT,0,MPI_COMM_WORLD);
 
+  //resize vectors on processors other than slaves
   if (cpu_id != 0 )
     {
       area_fractions.resize(num_tasks);
@@ -138,43 +122,9 @@ int main(int argc, char** argv)
   MPI_Bcast(&timing.front(),num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
   //
   MPI_Barrier(MPI_COMM_WORLD);
-  //std::cout << "ID: " << cpu_id << " num_tasks " << num_tasks << std::endl; 
-  /*
-  if ( cpu_id == 0)
-    {
-  
-      std::cout << "ID: " << cpu_id << " num_tasks " << num_tasks << std::endl; 
-      std::cout << "Area fractions size: " << area_fractions.size() << std::endl; 
 
-      for( unsigned int i = 0; i < num_tasks; i++)
-	std::cout << "ID: " << cpu_id << " Area_fraction: " << area_fractions[i] << " Valence: " << valences[i] << std::endl;
-    }
-
-  MPI_Barrier(MPI_COMM_WORLD);
-
-
-
-  if ( cpu_id == 1)
-    {
-
-      std::cout << "ID: " << cpu_id << " num_tasks " << num_tasks << std::endl; 
-      std::cout << "Area fractions size: " << area_fractions.size() << std::endl; 
-      for( unsigned int i = 0; i < num_tasks; i++)
-	std::cout << "ID: " << cpu_id << " Area_fraction: " << area_fractions[i] << " Valence: " << valences[i] << std::endl;
-
-    }
-
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  MPI_Finalize();
- 
-  return 0; 
-  */
-  
-
-
-      // broadcast these vectors
-      //  broadcast area fractions, valences and timiing
+  // broadcast these vectors
+  // broadcast area fractions, valences and timiing
       
   //chop up job
   int num_job_on_proc = num_tasks/size; 
@@ -193,22 +143,22 @@ int main(int argc, char** argv)
       job_id_start = num_task_master + ((cpu_id-1)*num_job_on_proc);
       job_id_end = job_id_start + num_job_on_proc - 1;
     }
-
+  
+  // run the jobs
   for ( int i = job_id_start ; i <= job_id_end ; i++ )
     {
       test_hv_cube_mesh(area_fractions[i] ,valences[i], timing[i]);
     }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  
-  // if(cpu_id == 0 )
+
+  //create a new vector for the results
   std::vector<double>result(num_tasks);
 
   MPI_Reduce(&timing.front(),&result.front(),num_tasks,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
   
   
   // now do output
-
   if(cpu_id == 0 ) 
     {   
       std::ofstream datafile; 
@@ -227,27 +177,5 @@ int main(int argc, char** argv)
 
   return 0;
 
-
 }
-
-
-void gnuplot_script()
-{
-
-  std::ofstream gp_file; 
-  gp_file.open("timing_plot.p");
-    
-  gp_file << "set xlabel 'Area Fraction (A_f)' " << std::endl;
-  gp_file << "set ylabel 'Valence (n)'" << std::endl;
-  gp_file << "set zlabel 'Avg Ray Fire Time (ms)' " << std::endl;
-
-  gp_file << "splot 'all.dat' matrix nonuniform w lines" << std::endl;
-
-  gp_file << "pause -1" << std::endl;
-
-}
-
-
-
-
 
