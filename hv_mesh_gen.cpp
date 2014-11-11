@@ -82,7 +82,7 @@ void create_cube()
 
   //create the cube
   iGeom::EntityHandle cube;
-  mk->igeom_instance()->createBrick( 50, 50, 50, cube);
+  mk->igeom_instance()->createBrick( 100, 100, 100, cube);
 
   //populate the model entities
   mk->populate_model_ents();
@@ -610,6 +610,14 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
   
   avg_fire_time = (end_time - start_time) / (double)(CLOCKS_PER_SEC * 100000); 
   std::cout << "Average ray fire time: " << avg_fire_time << "s" << std::endl;
+}
+
+
+void save_mesh(std::string filename)
+{
+
+  mk->save_mesh( filename.c_str() );
+
 }
 
 

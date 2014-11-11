@@ -84,3 +84,6 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
 
 
 moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_time, double worst_split_ratio = 0.95 );
+
+//call into save mesh
+void save_mesh( std::string filename ); 

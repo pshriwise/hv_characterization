@@ -22,6 +22,9 @@ int main(int argc, char** argv)
   //create the hv cube and write it to file
   prep_mesh( A_f, valence );
 
+
+  save_mesh("hv_cube.h5m"); 
+
   return 0;
 
 }
