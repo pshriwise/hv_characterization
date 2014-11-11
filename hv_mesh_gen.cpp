@@ -27,15 +27,22 @@ using namespace MeshKit;
 
 MKCore *mk = new MKCore();
 
-moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_time )
+moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_time, double worst_split_ratio )
 {
 
 	  prep_mesh( A_f, valence);
 
 	  ////////////// START OF MOAB STUFF \\\\\\\\\\\\\\\\\\\\\\\	\
-	  
+
+	  moab::OrientedBoxTreeTool::Settings settings; 
+	  settings.max_leaf_entities = 8; 
+	  settings.max_depth = 0;
+	  settings.worst_split_ratio = 0.95; 
+	  settings.best_split_ratio = 0.4;
+	  settings.set_options = MESHSET_SET;
+
 	  //now we'll try to load this mesh-file into a dagmc instance
-	  moab::DagMC *dag = moab::DagMC::instance( mk->moab_instance() );
+	  moab::DagMC *dag = moab::DagMC::instance( mk->moab_instance(), &settings );
 
 	  moab::ErrorCode result;
 	  

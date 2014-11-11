@@ -81,4 +81,4 @@ moab::ErrorCode get_volumes( moab::Interface* mb, moab::Range &volumes);
 void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source);
 
 
-moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_time );
+moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_time, double worst_split_ratio = 0.95 );
