@@ -28,7 +28,9 @@ using namespace MeshKit;
 
 
 ////// Functions for generating the hv region \\\\\\\\\\
-
+//creates a cube and meshes it using the SolidSurfaceMesher
+void create_cube(); 
+// calls functions for setting up the inital mesh, getting the surface we want to make high-valence and then refacets the surface
 void prep_mesh( double A_f, int valence );
 // creates new facets for the square surface (in const Z-plane) with a high-valence region of size A_f*(surface_area) and a valency of n
 void refacet_surface( moab::EntityHandle surf, double A_f, int valence );

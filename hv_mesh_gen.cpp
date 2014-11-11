@@ -11,6 +11,7 @@
 
 #include "meshkit/MKCore.hpp"
 #include "meshkit/ModelEnt.hpp"
+#include "meshkit/SolidSurfaceMesher.hpp"
 #include "gen.hpp"
 #include "DagMC.hpp"
 #include "moab/OrientedBoxTreeTool.hpp"
@@ -75,11 +76,37 @@ moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_
 
 }
 
+
+void create_cube()
+{
+
+  //create the cube
+  iGeom::EntityHandle cube;
+  mk->igeom_instance()->createBrick( 50, 50, 50, cube);
+
+  //populate the model entities
+  mk->populate_model_ents();
+
+  MEntVector surfs;
+  mk->get_entities_by_dimension(2,surfs);
+
+  SolidSurfaceMesher *ssm;
+  ssm = (SolidSurfaceMesher*) mk->construct_meshop("SolidSurfaceMesher", surfs);
+
+  double facet_tol = 1e-04, geom_resabs = 1e-06;
+  ssm->set_mesh_params(facet_tol, geom_resabs);
+
+  mk->setup();
+  mk->execute();  
+
+}
+
+
 void prep_mesh( double A_f, int valence )
 {
 
-  //Load the mesh file
-  mk->load_mesh("cube.h5m");
+  //create the initial geometry and mesh it
+  create_cube();
 
   //Get all of the surface ModelEnts
   MEntVector surfs;
@@ -421,7 +448,7 @@ void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
       }
 
     } //end loop  
-}
+} //end get_hv_surf
 
 void tear_down_surface( moab::EntityHandle surf)
 {
