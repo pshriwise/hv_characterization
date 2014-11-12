@@ -244,9 +244,9 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
       else {
 	
 	//set the dam coordinates
-	if ( coords[x_idx] < 0 ) to_ewdam[0] = dam_bump_short;
+	if ( coords[x_idx] < 0 ) to_ewdam[x_idx] = dam_bump_short;
 	else to_ewdam[x_idx] = -dam_bump_short;
-	if ( coords[y_idx] < 0 ) to_ewdam[1] = dam_bump_long;
+	if ( coords[y_idx] < 0 ) to_ewdam[y_idx] = dam_bump_long;
 	else to_ewdam[y_idx] = -dam_bump_long;
 
 	//create the dam vertex 
