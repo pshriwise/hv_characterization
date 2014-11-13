@@ -38,7 +38,7 @@ moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_
 	  moab::OrientedBoxTreeTool::Settings settings; 
 	  settings.max_leaf_entities = 8; 
 	  settings.max_depth = 0;
-	  settings.worst_split_ratio = 0.95; 
+	  settings.worst_split_ratio = worst_split_ratio; 
 	  settings.best_split_ratio = 0.4;
 	  settings.set_options = MESHSET_SET;
 
