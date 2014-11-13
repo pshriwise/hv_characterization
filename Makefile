@@ -36,6 +36,4 @@ plot_datafile:
 	paste params.dat data.dat > all.dat
 
 clean: 
-	mv cube.h5m cube.saf
 	rm -f sweep write_obbs create_hv_mesh hv_cube .#* *# *.h5m *.vtk *.stl *~ *.p *.o
-	mv cube.saf cube.h5m
