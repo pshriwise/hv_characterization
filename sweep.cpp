@@ -29,7 +29,7 @@ int main(int argc, char** argv)
   std::vector<double> area_fractions; // list of area fractions
   std::vector<int> valences; // list of valences
   std::vector<double> timing; //vector for results
- 
+  std::vector<double> worst_split_ratios; //vector of worst-case split ratios
 
   // if master task, do the reading and set up. Otherwise wait
   if(cpu_id == 0 )
@@ -74,13 +74,13 @@ int main(int argc, char** argv)
       
       double A_f = 0;
       int valence = 0;
-      double wsr = min_wsr;
+      double wsr = 0;
       
       // num_jobs
-      num_tasks = (area_intervals-1)*valence_intervals;
+      num_tasks = (wsr_intervals)*(area_intervals)*valence_intervals;
 
       // precompute input values      
-      for(unsigned int i=1; i < area_intervals; i++)
+      for(unsigned int i=1; i <=area_intervals; i++)
 	{
 	  
 	  A_f = (double)i * ( max_A_f / area_intervals);
@@ -89,14 +89,20 @@ int main(int argc, char** argv)
 	  for(unsigned int j=0; j < valence_intervals; j++)
 	    {
 	      valence = (double)j * ( max_n / valence_intervals );
+
+	      for(unsigned int k=0; k < wsr_intervals; k++)
+		{
+		  wsr = min_wsr + k*((max_wsr-min_wsr)/(wsr_intervals-1));
 	      //the first time we go through the inner loop, 
 	      //write all of the valence values
 	      area_fractions.push_back(A_f);
 	      valences.push_back(valence);     
+	      worst_split_ratios.push_back(wsr);
 	      timing.push_back(0.0);      
+		}
 	    }
 	}
-    }
+    }//end master-specific commands
 
   // synchronize
   MPI_Barrier(MPI_COMM_WORLD);
@@ -109,6 +115,7 @@ int main(int argc, char** argv)
     {
       area_fractions.resize(num_tasks);
       valences.resize(num_tasks); 
+      worst_split_ratios.resize(num_tasks);
       timing.resize(num_tasks);
     }
 
@@ -118,6 +125,8 @@ int main(int argc, char** argv)
   MPI_Bcast(&area_fractions.front(),num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
   // share valences
   MPI_Bcast(&valences.front(),num_tasks,MPI_INT,0,MPI_COMM_WORLD);
+  // share ratios
+  MPI_Bcast(&worst_split_ratios.front(),num_tasks,MPI_INT,0,MPI_COMM_WORLD);
   // share timing
   MPI_Bcast(&timing.front(),num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
   //
@@ -147,7 +156,7 @@ int main(int argc, char** argv)
   // run the jobs
   for ( int i = job_id_start ; i <= job_id_end ; i++ )
     {
-      test_hv_cube_mesh(area_fractions[i] ,valences[i], timing[i]);
+      test_hv_cube_mesh(area_fractions[i] ,valences[i], timing[i], worst_split_ratios[i]);
     }
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -165,7 +174,7 @@ int main(int argc, char** argv)
       datafile.open("data.dat"); 
       
       for( unsigned int i = 0; i < area_fractions.size(); i++)
-	datafile << area_fractions[i] << "\t" << valences[i] << "\t" << result[i] << std::endl;
+	datafile << valences[i] << "\t" << area_fractions[i] << "\t" << worst_split_ratios[i] << "\t" << result[i] << std::endl;
       datafile.close();
     }
   
