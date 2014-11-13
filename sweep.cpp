@@ -90,9 +90,9 @@ int main(int argc, char** argv)
 	    {
 	      valence = (double)j * ( max_n / valence_intervals );
 
-	      for(unsigned int k=0; k < wsr_intervals; k++)
+	      for(unsigned int k=0; k <wsr_intervals; k++)
 		{
-		  wsr = min_wsr + k*((max_wsr-min_wsr)/(wsr_intervals-1));
+		  wsr = min_wsr + k*((max_wsr-min_wsr)/(wsr_intervals));
 	      //the first time we go through the inner loop, 
 	      //write all of the valence values
 	      area_fractions.push_back(A_f);
@@ -126,7 +126,7 @@ int main(int argc, char** argv)
   // share valences
   MPI_Bcast(&valences.front(),num_tasks,MPI_INT,0,MPI_COMM_WORLD);
   // share ratios
-  MPI_Bcast(&worst_split_ratios.front(),num_tasks,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Bcast(&worst_split_ratios.front(),num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
   // share timing
   MPI_Bcast(&timing.front(),num_tasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
   //
