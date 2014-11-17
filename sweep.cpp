@@ -77,7 +77,7 @@ int main(int argc, char** argv)
       double wsr = 0;
       
       // num_jobs
-      num_tasks = (wsr_intervals)*(area_intervals)*valence_intervals;
+      num_tasks = (wsr_intervals+1)*(area_intervals)*valence_intervals;
 
       // precompute input values      
       for(unsigned int i=1; i <=area_intervals; i++)
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
 	    {
 	      valence = (double)j * ( max_n / valence_intervals );
 
-	      for(unsigned int k=0; k <wsr_intervals; k++)
+	      for(unsigned int k=0; k <=wsr_intervals; k++)
 		{
 		  wsr = min_wsr + k*((max_wsr-min_wsr)/(wsr_intervals));
 	      //the first time we go through the inner loop, 
