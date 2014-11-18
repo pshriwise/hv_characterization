@@ -14,6 +14,9 @@ all: build
 
 build: sweep write_obbs hv_cube
 
+test_model: obbhexwriter.o hv_mesh_gen.o ProgOptions.o
+	$(CC) test_model.cpp hv_mesh_gen.o obbhexwriter.o ProgOptions.o -o test_model $(INCLUDE_DIRS) $(LIBS)
+
 sweep: obbhexwriter.o hv_mesh_gen.o ProgOptions.o
 	$(CC) sweep.cpp hv_mesh_gen.o obbhexwriter.o -o sweep $(INCLUDE_DIRS) $(LIBS)
 
