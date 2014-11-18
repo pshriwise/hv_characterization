@@ -3,7 +3,9 @@
 #include <assert.h>
 
 #include "moab/ProgOptions.hpp"
+#include "MBCartVect.hpp"
 #include "MBCore.hpp"
+#include "DagMC.hpp"
 #include "hv_mesh_gen.hpp"
 
 using namespace moab; 
@@ -36,11 +38,32 @@ int main( int argc, char** argv)
 
   //get the number of triangles in the model 
   std::vector<EntityHandle> tris;
-
   rval = mb->get_entities_by_type( 0, MBTRI, tris);
   ERR_CHECK(rval); 
-  
   std::cout << "There are " << tris.size() << " triangles in the model." << std::endl; 
+
+  //hand model instance to dagmc
+  DagMC *dag = DagMC::instance(mb); 
+
+  rval = dag->load_existing_contents(); 
+  ERR_CHECK(rval); 
+
+  rval = dag->init_OBBTree();
+  ERR_CHECK(rval); 
+
+  //get the first volume in the instance (for now)
+  Range vols; 
+  rval = get_volumes( dag->moab_instance(), vols); 
+  ERR_CHECK(rval); 
+
+  //prep for analysis
+  double avg_fire_time; 
+  CartVect source_pos; 
+  source_pos[0] = 0.0; source_pos[1] = 0.0; source_pos[2] = 0.0; 
+  
+  fire_rand_rays( dag, vols[0], 100000, avg_fire_time, source_pos); 
+  
+  std::cout << "The average fire time for this mesh was: " << avg_fire_time << std::endl; 
 
   return 0;
 
