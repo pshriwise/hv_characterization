@@ -1,6 +1,7 @@
 
 
 #include <assert.h>
+#include <fstream>
 
 //sigma includes
 #include "moab/ProgOptions.hpp"
@@ -68,6 +69,11 @@ int main( int argc, char** argv)
   fire_rand_rays( dag, vols[0], 100000, avg_fire_time, source_pos); 
   
   std::cout << "The average fire time for this mesh was: " << avg_fire_time << std::endl; 
+
+  std::ofstream datafile; 
+  datafile.open("model_data.dat");
+
+  datafile << tris.size() << "\t" << avg_fire_time << std::endl; 
 
   return 0;
 
