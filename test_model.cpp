@@ -2,7 +2,8 @@
 
 #include <assert.h>
 #include <fstream>
-
+#include <sstream>
+#include <iomanip>
 //sigma includes
 #include "moab/ProgOptions.hpp"
 #include "MBCartVect.hpp"
@@ -37,8 +38,13 @@ int main( int argc, char** argv)
   po.addRequiredArg<std::string>( "input_file", "Filename of model to test.", &filename); 
 
   po.parseCommandLine( argc, argv); 
+  
 
-  rval = mb->load_file( filename.c_str() ); 
+  //Load the file and facet
+  double facet_tol = 1e-02;
+  std::stringstream options; options << "FACET_DISTANCE_TOLERANCE=" << std::setprecision(12) << facet_tol;
+  std::string opts = options.str();
+  rval = mb->load_file( filename.c_str(), 0, opts.c_str() ); 
   ERR_CHECK(rval);
 
   //get the number of triangles in the model 
@@ -70,6 +76,9 @@ int main( int argc, char** argv)
   
   std::cout << "The average fire time for this mesh was: " << avg_fire_time << std::endl; 
 
+
+
+  //Write data to file
   std::ofstream datafile; 
   datafile.open("model_data.dat");
 
