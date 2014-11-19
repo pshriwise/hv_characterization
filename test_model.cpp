@@ -45,11 +45,12 @@ int main( int argc, char** argv)
   
   std::vector<int> tri_numbers;
   std::vector<double> timing;
-
-  for(unsigned int i = 1; i <=facet_tol_intervals; i++)
+  std::vector<double> facet_tols; 
+  for(unsigned int i = 0; i <=facet_tol_intervals; i++)
     {
       //Load the file and facet
       double facet_tol = min_facet_tol + ((max_facet_tol-min_facet_tol)*i)/double(facet_tol_intervals);
+      facet_tols.push_back(facet_tol);
       std::stringstream options; options << "FACET_DISTANCE_TOLERANCE=" << std::setprecision(12) << facet_tol;
       std::string opts = options.str();
       rval = mb->load_file( filename.c_str(), 0, opts.c_str() ); 
@@ -97,7 +98,7 @@ int main( int argc, char** argv)
   datafile.open("model_data.dat");
 
   for( unsigned int i = 0; i < timing.size(); i++)
-  datafile << tri_numbers[i] << "\t" << timing[i] << std::endl; 
+    datafile << tri_numbers[i] << "\t" << timing[i] << "\t" << facet_tols[i] << std::endl; 
 
   return 0;
 
