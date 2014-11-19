@@ -76,6 +76,9 @@ int main( int argc, char** argv)
   
   std::cout << "The average fire time for this mesh was: " << avg_fire_time << std::endl; 
 
+  //clear everything in this moab instance and destroy the DagMC instance 
+  rval = mb->delete_mesh();
+  ERR_CHECK(rval);
 
 
   //Write data to file
