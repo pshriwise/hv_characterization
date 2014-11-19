@@ -4,6 +4,8 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <math.h>
+
 //sigma includes
 #include "moab/ProgOptions.hpp"
 #include "MBCartVect.hpp"
@@ -39,17 +41,18 @@ int main( int argc, char** argv)
 
   po.parseCommandLine( argc, argv); 
   
-  double min_facet_tol = 1e-01;
-  double max_facet_tol = 1e-02;
-  int facet_tol_intervals = 2;
+  double min_facet_tol = 1e-03;
+  int facet_tol_intervals = 4;
   
   std::vector<int> tri_numbers;
   std::vector<double> timing;
   std::vector<double> facet_tols; 
-  for(unsigned int i = 0; i <=facet_tol_intervals; i++)
+  double facet_tol = min_facet_tol;
+  for(unsigned int i = 0; i <= facet_tol_intervals; i++)
     {
       //Load the file and facet
-      double facet_tol = min_facet_tol + ((max_facet_tol-min_facet_tol)*i)/double(facet_tol_intervals);
+      if ( 0 != i) facet_tol = (0 == i%2) ? min_facet_tol*pow(5,double(i)/2)*pow(2,double(i)/2) : min_facet_tol*pow(5,((double(i)-1)/2)+1)*pow(2,double((i)-1)/2);
+
       facet_tols.push_back(facet_tol);
       std::stringstream options; options << "FACET_DISTANCE_TOLERANCE=" << std::setprecision(12) << facet_tol;
       std::string opts = options.str();
