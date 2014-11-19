@@ -11,6 +11,8 @@
 #include "MBCartVect.hpp"
 #include "MBCore.hpp"
 #include "DagMC.hpp"
+#include "InitCGMA.hpp"
+#include "GeometryQueryTool.hpp"
 
 //local includes
 #include "ray_fire.hpp"
@@ -26,6 +28,7 @@ inline void ERR_CHECK( moab::ErrorCode rval )
       assert(false);
     }
 }
+
 
 int main( int argc, char** argv) 
 {
@@ -118,6 +121,9 @@ int main( int argc, char** argv)
       //clear everything in this moab instance and destroy the DagMC instance 
       rval = mb->delete_mesh();
       ERR_CHECK(rval);
+
+      InitCGMA::initialize_cgma(); 
+      GeometryQueryTool::instance()->delete_geometry(); //don't want to talk about it
       
       timing.push_back( avg_fire_time ); 
     }

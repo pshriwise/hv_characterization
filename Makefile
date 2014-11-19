@@ -5,10 +5,13 @@ MPICC = mpic++
 INCLUDE_DIRS = -I/home/shriwise/dagmc_blds/lasso/include \
 	       -I/home/shriwise/dagmc_blds/cgm_dev/include/ \
                -I/home/shriwise/dagmc_blds/moabs/include \
-	       -I/home/shriwise/meshkit/include/
+	       -I/home/shriwise/meshkit/include/ \
+               -I/home/shriwise/dagmc_blds/cgm_dev/include
 
 LIBS = -L/home/shriwise/dagmc_blds/moabs/lib/ -lMOAB -ldagmc \
-       -L/home/shriwise/meshkit/lib/ -lMeshKit
+       -L/home/shriwise/meshkit/lib/ -lMeshKit \
+       -L/home/shriwise/dagmc_blds/cgm_dev/lib -lcgm \
+       -L/home/shriwise/Cubits/14/bin -lcubiti19 -lcubit_geom -lcubit_util
 
 
 all: build
