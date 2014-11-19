@@ -2,7 +2,7 @@
 #include <iostream>
 #include "obbhexwriter.hpp"
 #include "DagMC.hpp"
-#include "ProgOptions.hpp"
+#include "moab/ProgOptions.hpp"
 #include "gen_mb_funcs.hpp"
 
 moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename, bool write_tris = false);

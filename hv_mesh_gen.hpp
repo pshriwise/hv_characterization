@@ -1,13 +1,4 @@
 
-#include <iostream>
-#include <ctime>
-#include <sstream>
-#include <iomanip> 
-#include <limits> 
-#include <assert.h>
-#include <math.h>
-#include <time.h>
-#include <vector>
 
 #include "meshkit/MKCore.hpp"
 #include "meshkit/ModelEnt.hpp"
@@ -18,13 +9,6 @@
 //local includes
 #include "obbhexwriter.hpp"
 #include "gen_mb_funcs.hpp"
-
-//timing includes
-#include <fstream>
-#include <fcntl.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <cstdlib>
 
 using namespace MeshKit;
 
@@ -47,38 +31,6 @@ void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf );
 void tear_down_surface( moab::EntityHandle surf );
 // returns the area of a polygon given the ordered verts
 double polygon_area( std::vector<moab::EntityHandle> verts );
-
-////// Functions for analyzing the hv region \\\\\\\\\\\\\
-
-static const double PI = acos(-1.0);
-static const double denom = 1.0 / ((double) RAND_MAX);
-static const double denomPI = PI * denom;
-
-
-static double facet_tol = 1e-4;
-static double source_rad = 0;
-static int vol_index = 1;
-static int num_random_rays = 1000;
-static int randseed = 12345;
-static bool do_stat_report = false;
-static bool do_trv_stats   = false;
-static double location_az = 2.0 * PI;
-static double direction_az = location_az;
-static const char* pyfile = NULL;
-
-inline void RNDVEC(CartVect& uvw, double &az) 
-{
-  
-  double theta = (PI/2)*denom*az*rand()+(PI/4);
-  double u = (sqrt(2)/2) - sqrt(2)*denom*rand();
-  uvw[0] = sqrt(1-u*u)*cos(theta);
-  uvw[1] = sqrt(1-u*u)*sin(theta);
-  uvw[2] = u;
-
-}
-
-
-void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source);
 
 
 moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_time, double worst_split_ratio = 0.95 );

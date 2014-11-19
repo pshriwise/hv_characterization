@@ -4,8 +4,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+//local includes
 #include "hv_mesh_gen.hpp"
-#include "ProgOptions.hpp"
+#include "moab/ProgOptions.hpp"
 
 void gnuplot_script();
 

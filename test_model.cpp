@@ -2,11 +2,14 @@
 
 #include <assert.h>
 
+//sigma includes
 #include "moab/ProgOptions.hpp"
 #include "MBCartVect.hpp"
 #include "MBCore.hpp"
 #include "DagMC.hpp"
-#include "hv_mesh_gen.hpp"
+
+//local includes
+#include "ray_fire.hpp"
 #include "gen_mb_funcs.hpp"
 
 using namespace moab; 
