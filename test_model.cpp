@@ -30,8 +30,14 @@ inline void ERR_CHECK( moab::ErrorCode rval )
 int main( int argc, char** argv) 
 {
 
+  
   moab::ErrorCode rval; 
+  
+  //Argument Vars
   std::string filename;
+  double min_facet_tol = 1e-03;
+  double max_facet_tol = 0.9;
+  int facet_tol_intervals = 4;
  
   Interface *mb = new Core(); 
 
@@ -39,23 +45,41 @@ int main( int argc, char** argv)
 
   po.addRequiredArg<std::string>( "input_file", "Filename of model to test.", &filename); 
 
+  po.addOpt<double>( "min_facet_tol", "Minimum faceting tolerance to test.", &min_facet_tol);
+
+  po.addOpt<double>( "max_facet_tol", "Maximum faceting tolerance allowed. The program will halt if this is reached.", &max_facet_tol);
+
+  po.addOpt<int>( "num_ints", "Number of intervals to add to the minimum faceting tolerance. These are added in multiples of 5 and 2 depending on the iteration.", &facet_tol_intervals); 
+
   po.parseCommandLine( argc, argv); 
   
-  double min_facet_tol = 1e-03;
-  int facet_tol_intervals = 4;
-  
+  //data storage containers
   std::vector<int> tri_numbers;
   std::vector<double> timing;
   std::vector<double> facet_tols; 
+  
+  //initalize facet_tol param
   double facet_tol = min_facet_tol;
   for(unsigned int i = 0; i <= facet_tol_intervals; i++)
     {
-      //Load the file and facet
+
       if ( 0 != i) facet_tol = (0 == i%2) ? min_facet_tol*pow(5,double(i)/2)*pow(2,double(i)/2) : min_facet_tol*pow(5,((double(i)-1)/2)+1)*pow(2,double((i)-1)/2);
 
+      // stop the program if we've gone over the maximum faceting tolerance
+      if (facet_tol > max_facet_tol)
+	{
+	  std::cout << "Maximum faceting tolerance reached, exiting loop and writing data..." << std::endl;
+	  break; 
+	}
+
+      //save faceting tolerance for write to datafile
       facet_tols.push_back(facet_tol);
+      
+      //setup fileoptions string
       std::stringstream options; options << "FACET_DISTANCE_TOLERANCE=" << std::setprecision(12) << facet_tol;
       std::string opts = options.str();
+
+      //Load the file and facet
       rval = mb->load_file( filename.c_str(), 0, opts.c_str() ); 
       ERR_CHECK(rval);
       
@@ -64,8 +88,9 @@ int main( int argc, char** argv)
       rval = mb->get_entities_by_type( 0, MBTRI, tris);
       ERR_CHECK(rval); 
       std::cout << "There are " << tris.size() << " triangles in the model." << std::endl; 
-      
-      //hand model instance to dagmc
+      tri_numbers.push_back( int(tris.size()) ); 
+
+      //hand model's moab instance to dagmc
       DagMC *dag = DagMC::instance(mb); 
       
       rval = dag->load_existing_contents(); 
@@ -92,7 +117,6 @@ int main( int argc, char** argv)
       rval = mb->delete_mesh();
       ERR_CHECK(rval);
       
-      tri_numbers.push_back( int(tris.size()) ); 
       timing.push_back( avg_fire_time ); 
     }
 
