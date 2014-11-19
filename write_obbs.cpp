@@ -1,8 +1,11 @@
 
 #include <iostream>
-#include "hv_mesh_gen.hpp"
+#include "obbhexwriter.hpp"
 #include "DagMC.hpp"
 #include "ProgOptions.hpp"
+#include "gen_mb_funcs.hpp"
+
+moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename, bool write_tris = false);
 
 int main( int argc, char** argv) 
 {
@@ -42,4 +45,40 @@ int main( int argc, char** argv)
 
   return 0;
   
+}
+
+
+moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename, bool write_tris) 
+{
+
+  moab::ErrorCode rval; 
+
+  moab::EntityHandle root;
+
+  rval = dag->get_root( vol, root );
+  assert( MB_SUCCESS == rval );
+  if( MB_SUCCESS != rval ) return rval; 
+
+  moab::OrientedBoxTreeTool *obbtool = dag->obb_tree();
+
+  rval = obbtool->stats( root, std::cout );
+  assert( MB_SUCCESS == rval );
+  if( MB_SUCCESS != rval ) return rval; 
+
+  //make a new moab core for the box hexes
+  moab::Core mbi2;
+
+  OBBHexWriter hw( obbtool, &mbi2, write_tris );
+
+  moab::OrientedBoxTreeTool::TrvStats tree_stats;
+
+  rval = obbtool->preorder_traverse( root, hw, &tree_stats );
+  assert( MB_SUCCESS == rval );
+  if( MB_SUCCESS != rval ) return rval; 
+
+  rval = hw.write_to_files( base_filename );
+  assert( MB_SUCCESS == rval );
+  if( MB_SUCCESS != rval ) return rval; 
+
+
 }

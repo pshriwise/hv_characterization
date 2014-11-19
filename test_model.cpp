@@ -7,6 +7,7 @@
 #include "MBCore.hpp"
 #include "DagMC.hpp"
 #include "hv_mesh_gen.hpp"
+#include "gen_mb_funcs.hpp"
 
 using namespace moab; 
 

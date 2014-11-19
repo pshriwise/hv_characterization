@@ -15,7 +15,10 @@
 #include "gen.hpp"
 #include "DagMC.hpp"
 #include "moab/OrientedBoxTreeTool.hpp"
+
+//local includes
 #include "hv_mesh_gen.hpp"
+#include "gen_mb_funcs.hpp"
 
 //timing includes
 #include <fstream>
@@ -507,68 +510,6 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
   
   return poly_area;
 }
-
- moab::ErrorCode get_volumes( moab::Interface* mb, moab::Range &volumes)
- {
-
-   moab::ErrorCode rval; 
-
-   //get the GEOM_DIM tag
-   moab::Tag geom_dim;
-   rval = mb->tag_get_handle( GEOM_DIMENSION_TAG_NAME, 1,
-		       MB_TYPE_INTEGER, geom_dim);
-   assert( MB_SUCCESS == rval);
-   if( MB_SUCCESS != rval) return rval; 
-
-   // geom dimension of 3 should indicate a volume
-   int dim = 3;
-   void* ptr = &dim;
-   
-   //get all volume meshsets (should only be one)
-   rval = mb->get_entities_by_type_and_tag( 0, MBENTITYSET, &geom_dim, &ptr, 1, volumes);
-   assert( MB_SUCCESS == rval);
-   if( MB_SUCCESS != rval) return rval; 
-
-   return MB_SUCCESS;
- }
-
-
-moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename, bool write_tris) 
-{
-
-  moab::ErrorCode rval; 
-
-  moab::EntityHandle root;
-
-  rval = dag->get_root( vol, root );
-  assert( MB_SUCCESS == rval );
-  if( MB_SUCCESS != rval ) return rval; 
-
-  moab::OrientedBoxTreeTool *obbtool = dag->obb_tree();
-
-  rval = obbtool->stats( root, std::cout );
-  assert( MB_SUCCESS == rval );
-  if( MB_SUCCESS != rval ) return rval; 
-
-  //make a new moab core for the box hexes
-  moab::Core mbi2;
-
-  OBBHexWriter hw( obbtool, &mbi2, write_tris );
-
-  moab::OrientedBoxTreeTool::TrvStats tree_stats;
-
-  rval = obbtool->preorder_traverse( root, hw, &tree_stats );
-  assert( MB_SUCCESS == rval );
-  if( MB_SUCCESS != rval ) return rval; 
-
-  rval = hw.write_to_files( base_filename );
-  assert( MB_SUCCESS == rval );
-  if( MB_SUCCESS != rval ) return rval; 
-
-
-}
-  
-
 
 void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source)
 {

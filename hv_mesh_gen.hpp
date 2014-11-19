@@ -14,8 +14,10 @@
 #include "gen.hpp"
 #include "DagMC.hpp"
 #include "moab/OrientedBoxTreeTool.hpp"
-#include "obbhexwriter.hpp"
 
+//local includes
+#include "obbhexwriter.hpp"
+#include "gen_mb_funcs.hpp"
 
 //timing includes
 #include <fstream>
@@ -75,10 +77,6 @@ inline void RNDVEC(CartVect& uvw, double &az)
 
 }
 
-
-moab::ErrorCode write_obb_mesh( moab::DagMC *dag, moab::EntityHandle vol, std::string& base_filename, bool write_tris = false);
-
-moab::ErrorCode get_volumes( moab::Interface* mb, moab::Range &volumes);
 
 void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source);
 
