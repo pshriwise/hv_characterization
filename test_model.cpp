@@ -49,7 +49,7 @@ int main( int argc, char** argv)
 
   po.addOpt<double>( "max_facet_tol", "Maximum faceting tolerance allowed. The program will halt if this is reached.", &max_facet_tol);
 
-  po.addOpt<int>( "num_ints", "Number of intervals to add to the minimum faceting tolerance. These are added in multiples of 5 and 2 depending on the iteration.", &facet_tol_intervals); 
+  po.addOpt<int>( "num_ints", "Number of intervals to add to the minimum faceting tolerance. These are added in multiples of 10% of the minimum faceting tolerance.", &facet_tol_intervals); 
 
   po.parseCommandLine( argc, argv); 
   
@@ -63,7 +63,9 @@ int main( int argc, char** argv)
   for(unsigned int i = 0; i <= facet_tol_intervals; i++)
     {
 
-      if ( 0 != i) facet_tol = (0 == i%2) ? min_facet_tol*pow(5,double(i)/2)*pow(2,double(i)/2) : min_facet_tol*pow(5,((double(i)-1)/2)+1)*pow(2,double((i)-1)/2);
+      facet_tol = min_facet_tol * (1.0 + 0.1*double(i));
+
+      //if ( 0 != i) facet_tol = (0 == i%2) ? min_facet_tol*pow(5,double(i)/2)*pow(2,double(i)/2) : min_facet_tol*pow(5,((double(i)-1)/2)+1)*pow(2,double((i)-1)/2);
 
       // stop the program if we've gone over the maximum faceting tolerance
       if (facet_tol > max_facet_tol)
@@ -122,7 +124,10 @@ int main( int argc, char** argv)
 
   //Write data to file
   std::ofstream datafile; 
-  datafile.open("model_data.dat");
+  std::string base_filename = filename.erase( filename.length()-4, filename.length() ); 
+  std::string data_filename = filename + "_model_data.dat";
+
+  datafile.open( data_filename.c_str() );
 
   for( unsigned int i = 0; i < timing.size(); i++)
     datafile << tri_numbers[i] << "\t" << timing[i] << "\t" << facet_tols[i] << std::endl; 
