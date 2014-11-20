@@ -63,11 +63,14 @@ int main( int argc, char** argv)
   
   //initalize facet_tol param
   double facet_tol = min_facet_tol;
-  for(unsigned int i = 0; i <= facet_tol_intervals; i++)
+  double power = 0.0;
+  double digit = 1.0;
+  for(unsigned int i = 1; i <= facet_tol_intervals; i++)
     {
-
-      facet_tol = min_facet_tol * (1.0 + 0.1*double(i));
-
+      if ( 0 == i%10 && i != 0 ) power += 1;
+      digit = ( 0 == i%10 ) ? 1.0 : i%10;
+      facet_tol = min_facet_tol * pow(10,power) * digit;
+      std::cout << "Facet tolerance:" << facet_tol << std::endl;
       //if ( 0 != i) facet_tol = (0 == i%2) ? min_facet_tol*pow(5,double(i)/2)*pow(2,double(i)/2) : min_facet_tol*pow(5,((double(i)-1)/2)+1)*pow(2,double((i)-1)/2);
 
       // stop the program if we've gone over the maximum faceting tolerance
@@ -114,7 +117,7 @@ int main( int argc, char** argv)
       CartVect source_pos; 
       source_pos[0] = 0.0; source_pos[1] = 0.0; source_pos[2] = 0.0; 
       
-      fire_rand_rays( dag, vols[0], 100000, avg_fire_time, source_pos); 
+      fire_rand_rays( dag, vols[0], 1000000, avg_fire_time, source_pos); 
       
       std::cout << "The average fire time for this mesh was: " << avg_fire_time << std::endl; 
 
