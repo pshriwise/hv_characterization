@@ -37,5 +37,6 @@ inline void RNDVEC(moab::CartVect& uvw, double &az)
 
 }
 
+void get_time( double &tot_time, double &user_time, double& sys_time);
 
 void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source);

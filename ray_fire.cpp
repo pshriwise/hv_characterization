@@ -6,10 +6,12 @@
 #include "DagMC.hpp"
 #include "MBCore.hpp"
 #include "MBCartVect.hpp"
+#include <sys/resource.h>
 
 void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source)
 {
 
+  std::cout.precision(6); 
   //always start with the same seed
   srand(randseed);
 
@@ -21,10 +23,10 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
   double dist;
   moab::OrientedBoxTreeTool::TrvStats trv_stats;
 
-  //start timer
-  std::clock_t start_time, end_time;
+  //set start times
+  double ttime_s, utime_s, stime_s, ttime_e, utime_e, stime_e;
+  get_time(ttime_s, utime_s, stime_s);
 
-  start_time = std::clock();
   for (int j = 0; j < num_random_rays; j++) {
     RNDVEC(uvw, location_az);
     
@@ -45,12 +47,34 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
     
   }
   //end timer 
-  end_time = std::clock();
+  //auto end_epoch = std::chrono::high_resolution_clock::now();
+  //auto end_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end_epoch-start_time).count();
   
   if( random_rays_missed ){
     std::cout << "Warning: " << random_rays_missed << " random rays did not hit the target volume" << std::endl;
   }
+
   
-  avg_fire_time = (end_time - start_time) / (double)(CLOCKS_PER_SEC * 100000); 
-  std::cout << "Average ray fire time: " << avg_fire_time << "s" << std::endl;
+
+  double timewith  = ttime_s-ttime_e;
+  std::cout << "Total time for ray fires: " << timewith << std::endl; 
+  avg_fire_time = timewith/(double)num_rand_rays;
+  std::cout << "Average time per ray fire: " << avg_fire_time << std::endl;
+
+}
+
+
+void get_time( double &tot_time, double &user_time, double& sys_time) 
+{
+
+  struct rusage r_usage; 
+
+  getrusage(RUSAGE_SELF, &r_usage); 
+
+  user_time = (double)r_usage.ru_utime.tv_sec +
+    ((double)r_usage.ru_utime.tv_usec/1.e6);
+  sys_time = (double)r_usage.ru_stime.tv_sec +
+    ((double)r_usage.ru_stime.tv_usec/1.e6);
+  tot_time = user_time + sys_time;
+
 }
