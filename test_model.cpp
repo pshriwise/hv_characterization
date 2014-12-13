@@ -116,10 +116,18 @@ int main( int argc, char** argv)
       double avg_fire_time; 
       CartVect source_pos; 
       source_pos[0] = 0.0; source_pos[1] = 0.0; source_pos[2] = 0.0; 
+
+      double tot_avg = 0;
+      int avg_ints = 50;
+      for( unsigned int t = 0; t < avg_ints; t++)
+	{
+	  fire_rand_rays( dag, vols[0], 10000, avg_fire_time, source_pos); 
+	  tot_avg += avg_fire_time;
+	}
+      tot_avg /= (double)avg_ints;
+
       
-      fire_rand_rays( dag, vols[0], 100000, avg_fire_time, source_pos); 
-      
-      std::cout << "The average fire time for this mesh was: " << avg_fire_time << std::endl; 
+      std::cout << "The average fire time for this mesh was: " << tot_avg << std::endl; 
 
       //clear everything in this moab instance and destroy the DagMC instance 
       rval = mb->delete_mesh();
@@ -128,7 +136,7 @@ int main( int argc, char** argv)
       InitCGMA::initialize_cgma(); 
       GeometryQueryTool::instance()->delete_geometry(); //don't want to talk about it
       
-      timing.push_back( avg_fire_time ); 
+      timing.push_back( tot_avg ); 
     }
 
   //Write data to file

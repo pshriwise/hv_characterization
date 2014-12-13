@@ -58,9 +58,9 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
   get_time(ttime_e, utime_e, stime_e);
 
   double timewith  = ttime_e-ttime_s;
-  std::cout << "Total time for ray fires: " << timewith << std::endl; 
+  //std::cout << "Total time for ray fires: " << timewith << std::endl; 
   avg_fire_time = timewith/(double)num_rand_rays;
-  std::cout << "Average time per ray fire: " << avg_fire_time << std::endl;
+  //std::cout << "Average time per ray fire: " << avg_fire_time << std::endl;
 
 }
 
