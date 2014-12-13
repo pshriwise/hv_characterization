@@ -117,7 +117,7 @@ int main( int argc, char** argv)
       CartVect source_pos; 
       source_pos[0] = 0.0; source_pos[1] = 0.0; source_pos[2] = 0.0; 
       
-      fire_rand_rays( dag, vols[0], 1000000, avg_fire_time, source_pos); 
+      fire_rand_rays( dag, vols[0], 100000, avg_fire_time, source_pos); 
       
       std::cout << "The average fire time for this mesh was: " << avg_fire_time << std::endl; 
 

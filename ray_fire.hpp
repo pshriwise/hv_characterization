@@ -18,7 +18,6 @@ static const double denomPI = PI * denom;
 static double facet_tol = 1e-4;
 static double source_rad = 0;
 static int vol_index = 1;
-static int num_random_rays = 1000;
 static int randseed = 12345;
 static bool do_stat_report = false;
 static bool do_trv_stats   = false;

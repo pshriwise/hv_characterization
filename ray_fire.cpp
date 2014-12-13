@@ -27,7 +27,8 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
   double ttime_s, utime_s, stime_s, ttime_e, utime_e, stime_e;
   get_time(ttime_s, utime_s, stime_s);
 
-  for (int j = 0; j < num_random_rays; j++) {
+  for (int j = 0; j < num_rand_rays; j++) {
+
     RNDVEC(uvw, location_az);
     
     xyz = uvw * source_rad + ray_source;
