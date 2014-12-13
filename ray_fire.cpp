@@ -54,9 +54,9 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
     std::cout << "Warning: " << random_rays_missed << " random rays did not hit the target volume" << std::endl;
   }
 
-  
+  get_time(ttime_e, utime_e, stime_e);
 
-  double timewith  = ttime_s-ttime_e;
+  double timewith  = ttime_e-ttime_s;
   std::cout << "Total time for ray fires: " << timewith << std::endl; 
   avg_fire_time = timewith/(double)num_rand_rays;
   std::cout << "Average time per ray fire: " << avg_fire_time << std::endl;
