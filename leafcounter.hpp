@@ -40,4 +40,7 @@ public:
 		   bool& descend);
 
 
+  double get_avg();
+
+
 };
