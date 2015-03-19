@@ -1,17 +1,25 @@
+include ${MOAB_MAKE}
+
 
 CC = g++
 MPICC = mpic++
 
-INCLUDE_DIRS = -I/home/shriwise/dagmc_blds/lasso/include \
-	       -I/home/shriwise/dagmc_blds/cgm_dev/include/ \
-               -I/home/shriwise/dagmc_blds/moabs/include \
-	       -I/home/shriwise/meshkit/include/ \
-               -I/home/shriwise/dagmc_blds/cgm_dev/include
+INCLUDE_DIRS += ${MOAB_INCLUDES}
 
-LIBS = -L/home/shriwise/dagmc_blds/moabs/lib/ -lMOAB -ldagmc \
-       -L/home/shriwise/meshkit/lib/ -lMeshKit \
-       -L/home/shriwise/dagmc_blds/cgm_dev/lib -lcgm \
-       -L/home/shriwise/Cubits/14/bin -lcubiti19 -lcubit_geom -lcubit_util
+LIBS += ${DAGMC_LIBS_LINK}
+
+
+
+#INCLUDE_DIRS = -I/home/shriwise/dagmc_blds/lasso/include \
+#	       -I/home/shriwise/dagmc_blds/cgm_dev/include/ \
+#               -I/home/shriwise/dagmc_blds/moabs/include \
+#	       -I/home/shriwise/meshkit/include/ \
+#               -I/home/shriwise/dagmc_blds/cgm_dev/include
+
+#LIBS = -L/home/shriwise/dagmc_blds/moabs/lib/ -lMOAB -ldagmc \
+#       -L/home/shriwise/meshkit/lib/ -lMeshKit \
+#       -L/home/shriwise/dagmc_blds/cgm_dev/lib -lcgm \
+#       -L/home/shriwise/Cubits/14/bin -lcubiti19 -lcubit_geom -lcubit_util
 
 
 all: build
@@ -27,11 +35,17 @@ sweep: gen_mb_funcs.o hv_mesh_gen.o ray_fire.o
 write_obbs: obbhexwriter.o gen_mb_funcs.o
 	$(CC) write_obbs.cpp gen_mb_funcs.o obbhexwriter.o -o write_obbs $(INCLUDE_DIRS) $(LIBS)
 
+count_leaves: leafcounter.o gen_mb_funcs.o
+	$(CC) count_leaves.cpp gen_mb_funcs.o leafcounter.o -o count_leaves $(INCLUDE_DIRS) $(LIBS)
+
 hv_cube: hv_mesh_gen.o gen_mb_funcs.o ray_fire.o
 	$(CC) hv_cube.cpp hv_mesh_gen.o gen_mb_funcs.o ray_fire.o -o hv_cube $(INCLUDE_DIRS) $(LIBS)
 
 obbhexwriter.o:
 	$(CC) obbhexwriter.cpp $(INCLUDE_DIRS) $(LIBS) -c -o obbhexwriter.o
+
+leafcounter.o:
+	$(CC) leafcounter.cpp $(INCLUDE_DIRS) $(LIBS) -c -o leafcounter.o
 
 hv_mesh_gen.o:
 	$(CC) hv_mesh_gen.cpp $(INCLUDE_DIRS) $(LIBS) -c -o hv_mesh_gen.o
