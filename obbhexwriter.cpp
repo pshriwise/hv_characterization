@@ -95,7 +95,7 @@ ErrorCode OBBHexWriter::transfer_tri_inst( Interface* orig_inst, Interface* new_
 	  j != old_verts.end(); j++)
 	{
 
-	  double *coords;
+	  double coords[3];
 	  result = orig_inst->get_coords( &(*j), 1, coords);
 	  assert( MB_SUCCESS == result);
 
