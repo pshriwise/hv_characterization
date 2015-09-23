@@ -1,10 +1,22 @@
 
+import sys
 from matplotlib import pyplot as plt
 import numpy as np
+import argparse as ap
+
+parser = ap.ArgumentParser()
+
+parser.add_argument('--datafile', type=str, default='data.dat', help='Datafile containing timing information.')
+parser.add_argument('--title',dest='plt_title', type=str,
+                    default='High Valance Characterizaion Timing Plot',
+                    help = 'Used to set the title of the created plot')
+
+args = parser.parse_args(sys.argv[1:])
 
 
 #Retrieve data
-raw = np.fromfile("data.dat",dtype=float,count=-1,sep="\t").reshape((2000,4))
+raw = np.fromfile(args.datafile,dtype=float,count=-1,sep="\t")
+raw = raw.reshape((raw.shape[0]/4,4))
 
 #Average and remove duplicate values
 raw = (raw[0::2]+raw[1::2])/2
@@ -23,6 +35,7 @@ fig, ax = plt.subplots(1,1)
 ax.set_xlabel("Valance")
 ax.set_ylabel("Area Fraction")
 
+plt.title(args.plt_title)
 plt.pcolormesh(Xv,Yv,Z,)
 plt.colorbar(format = '%2.0E')
 plt.show()
