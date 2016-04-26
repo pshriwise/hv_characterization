@@ -37,3 +37,5 @@ moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_
 
 //call into save mesh
 void save_mesh( std::string filename ); 
+
+void order_corner_verts(std::vector<moab::EntityHandle> corners, std::vector<moab::EntityHandle>& ordered_corners);

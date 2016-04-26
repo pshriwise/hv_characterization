@@ -5,7 +5,7 @@
 //Sigma Includes
 #include "meshkit/MKCore.hpp"
 #include "meshkit/ModelEnt.hpp"
-#include "meshkit/SolidSurfaceMesher.hpp"
+#include "meshkit/SurfaceFacetMeshReader.hpp"
 #include "gen.hpp"
 #include "DagMC.hpp"
 #include "moab/OrientedBoxTreeTool.hpp"
@@ -59,7 +59,8 @@ moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_
 	  //call into the new functions for firing random rays and get the avg time
 	  fire_rand_rays( dag, vols[0], 100000, avg_fire_time, source);
 	  //write time to data file
-	  
+
+	  mk->save_mesh("hvcube.h5m");
 	  std::cout << "The average fire time for this mesh was: " << avg_fire_time << "s" << std::endl;
 	  ray_fire_time = avg_fire_time;
 	  
@@ -82,11 +83,11 @@ void create_cube()
   MEntVector surfs;
   mk->get_entities_by_dimension(2,surfs);
 
-  SolidSurfaceMesher *ssm;
-  ssm = (SolidSurfaceMesher*) mk->construct_meshop("SolidSurfaceMesher", surfs);
+  SurfaceFacetMeshReader *sfmr;
+  sfmr = (SurfaceFacetMeshReader*) mk->construct_meshop("SurfaceFacetMeshReader", surfs);
 
   double facet_tol = 1e-04, geom_resabs = 1e-06;
-  ssm->set_mesh_params(facet_tol, geom_resabs);
+  sfmr->set_mesh_params(facet_tol, geom_resabs);
 
   mk->setup();
   mk->execute();  
@@ -166,10 +167,12 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
   //based on surface area, get the length of one of the center-square sides
   if( A_f == 1 )
     {
-      std::cout << "Area fraction cannot equal 1. Trimming it a bit... " << std::endl;
-      A_f -= 0.001;
-      std::cout << "Area fraction: " << A_f << std::endl; 
+      std::vector<moab::EntityHandle> ordered_corners;
+      order_corner_verts(corners, ordered_corners);
+      box_verts = ordered_corners;
+      return;
     }
+
   double hv_area = A_f*cube_area/6; //divide by 6 because this surface represents all surfaces of the cube
   if ( hv_area >= surface_area ) std::cout << "ERROR: Area fraction must be less than 1/6 for now." << std::endl;
   assert( hv_area < surface_area );
@@ -200,11 +203,11 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
   for(std::vector<moab::EntityHandle>::iterator i=corners.begin(); i!=corners.end(); i++)
     {
       //first get the coordinates of this corner
-      MBCartVect coords;
+      moab::CartVect coords;
       mk->moab_instance()->get_coords( &(*i), 1, coords.array() );
       
       //need three cartesian vectors telling us where to put the verts, two for the dam points, one for the inner point.
-      MBCartVect to_ewdam, to_nsdam, to_box;
+      moab::CartVect to_ewdam, to_nsdam, to_box;
       to_ewdam[axis] = 0; to_nsdam[axis] = 0; to_box[axis] = 0; //only moving on the x-y plane here
       
       //always want to create this vert
@@ -286,19 +289,51 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
 
       //there are always two triangles to create that connect the dam
       //to the corner, we'll do that now
-      moab::EntityHandle tri_verts[4] = { *ewdam_vert, *i, box_vert, *nsdam_vert  };
+      moab::CartVect corner_coords;
+      mk->moab_instance()->get_coords(&(*i), 1, corner_coords.array());
+      moab::EntityHandle tri1_verts[3] = {*i, *nsdam_vert, box_vert};
+      moab::EntityHandle tri2_verts[3] = {*i, *ewdam_vert, box_vert};
+      if( coords[x_idx] < 0 ) {
+	if ( coords[y_idx] > 0 ) {
+	  tri1_verts[1] = *nsdam_vert;
+	  tri1_verts[2] = box_vert;
+	  tri2_verts[1] = box_vert;
+	  tri2_verts[2] = *ewdam_vert;
+	}
+	else {
+	  tri1_verts[1] = box_vert;
+	  tri1_verts[2] = *nsdam_vert;
+	}
+      }
+      else {
+	if ( coords[y_idx] > 0 ) {
+	  tri1_verts[1] = box_vert;
+	  tri1_verts[2] = *nsdam_vert;
+	}
+	else {
+	  tri2_verts[1] = box_vert;
+	  tri2_verts[2] = *ewdam_vert;
+	}
+      }
       std::vector<moab::EntityHandle> tris(2);
-      mk->moab_instance()->create_element( MBTRI, &tri_verts[0], 3, tris[0] );
-      mk->moab_instance()->create_element( MBTRI, &tri_verts[1], 3, tris[1] );
+      mk->moab_instance()->create_element( MBTRI, &tri1_verts[0], 3, tris[0] );
+      mk->moab_instance()->create_element( MBTRI, &tri2_verts[0], 3, tris[1] );
       
       //now we'll add these to the set
-      mk->moab_instance()->add_entities( surf, &tri_verts[0], 4 );
+      mk->moab_instance()->add_entities( surf, &tri1_verts[0], 3 );
+      mk->moab_instance()->add_entities( surf, &tri2_verts[0], 3 );      
       mk->moab_instance()->add_entities( surf, &(tris[0]), tris.size() );
     }
 
   //now we should have all of the info needed to create our dam triangles
   std::vector<moab::EntityHandle> dam_tris(4);
   assert( nd.size()==3 );
+  moab::EntityHandle temp = nd[1];
+  nd[1] = nd[2];
+  nd[2] = temp;
+  temp = wd[1];
+  wd[1] = wd[2];
+  wd[2] = temp;
   mk->moab_instance()->create_element( MBTRI, &(nd[0]), nd.size(), dam_tris[0]);
   mk->moab_instance()->create_element( MBTRI, &(sd[0]), sd.size(), dam_tris[1]);
   mk->moab_instance()->create_element( MBTRI, &(ed[0]), ed.size(), dam_tris[2]);
@@ -310,18 +345,7 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
   
   //re-order the M verts
   std::vector<moab::EntityHandle> ordered_box(4);
-  for(unsigned int i = 0; i < box.size() ; i++)
-    {
-
-      MBCartVect v_coords;
-      mk->moab_instance()->get_coords( &(box[i]), 1, v_coords.array() );
-      double x = v_coords[x_idx]; double y = v_coords[y_idx];
-      // again, our surface is cenetered on the origin
-      if ( x < 0 && y < 0) ordered_box[0] = box[i];
-      else if ( x < 0 && y > 0) ordered_box[1] = box[i];
-      else if ( x > 0 && y > 0) ordered_box[2] = box[i];
-      else if ( x > 0 && y < 0) ordered_box[3] = box[i];
-    }
+  order_corner_verts(box, ordered_box);
 
   box_verts = ordered_box;
   //now that the middle box is ordered we can add the triangles that 
@@ -359,13 +383,13 @@ void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> bo
 
   //start by making a paramaterization of the box diagonal
   //because we know the order of these verts, we can get the diagonal coordinates directly
-  MBCartVect sw_coords, ne_coords;
+  moab::CartVect sw_coords, ne_coords;
 
   mk->moab_instance()->get_coords( &box_verts[0], 1, sw_coords.array() );
   mk->moab_instance()->get_coords( &box_verts[2], 1, ne_coords.array() );
 
   //now create the param vector
-  MBCartVect sw_to_ne = ne_coords-sw_coords;
+  moab::CartVect sw_to_ne = ne_coords-sw_coords;
 
   // now, based on the valence asked for, get the new vertex coords long this line
   std::vector<moab::EntityHandle> diag_verts;
@@ -374,7 +398,7 @@ void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> bo
   for(unsigned int i = 1; i <= n-1; i++)
     {
       double u = double(i)/double(n);
-      MBCartVect new_coords = sw_coords + u*sw_to_ne;
+      moab::CartVect new_coords = sw_coords + u*sw_to_ne;
       moab::EntityHandle new_vert;
       mk->moab_instance()->create_vertex( new_coords.array(), new_vert);
       diag_verts.push_back(new_vert);
@@ -400,7 +424,7 @@ void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> bo
      
       moab::EntityHandle tri1, tri2;
       //creating new tris
-      moab::EntityHandle tri1_verts[3] = { nw_vert, diag_verts[i], diag_verts[i+1] };
+      moab::EntityHandle tri1_verts[3] = { nw_vert, diag_verts[i+1], diag_verts[i] };
       moab::EntityHandle tri2_verts[3] = { se_vert, diag_verts[i], diag_verts[i+1] };
       mk->moab_instance()->create_element( MBTRI, &tri1_verts[0], 3, tri1);
       mk->moab_instance()->create_element( MBTRI, &tri2_verts[0], 3, tri2);
@@ -425,7 +449,7 @@ void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
       mk->moab_instance()->get_entities_by_type( sh, MBTRI, tris);
       
       //setup a check vector
-      MBCartVect check;
+      moab::CartVect check;
       check [0] = 0; check [1] = 1; check[2] = 0;
       //get the normal for the first triangle on each surface
       
@@ -433,11 +457,11 @@ void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
       std::vector<moab::EntityHandle> verts;
       mk->moab_instance()->get_connectivity( &(tris[0]), 1, verts);
       
-      MBCartVect coords[3];
+      moab::CartVect coords[3];
       
       mk->moab_instance()->get_coords( &(verts[0]), 3, coords[0].array() );
       
-      MBCartVect tri_norm;
+      moab::CartVect tri_norm;
       gen::triangle_normal( coords[0], coords[1], coords[2], tri_norm);
       
       if( tri_norm == check){
@@ -477,10 +501,10 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
   double vert_coords[verts.size()*3];
   mk->moab_instance()->get_coords( &(verts[0]), verts.size(), &(vert_coords[0]) );
 
-  const MBCartVect* coords = reinterpret_cast<const MBCartVect*>(vert_coords);  
+  const moab::CartVect* coords = reinterpret_cast<const moab::CartVect*>(vert_coords);  
 
   //Calculate the surface's area
-  MBCartVect mid(0,0,0);
+  moab::CartVect mid(0,0,0);
   for (int i = 0; i < num_vertices; ++i) mid += coords[i];
   mid /= num_vertices;
 
@@ -488,7 +512,7 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
   for (int i = 0; i < num_vertices; i++)
     {
       int j = (i+1)%(num_vertices);
-      MBCartVect pnt1, pnt2;
+      moab::CartVect pnt1, pnt2;
       pnt1 = coords[i];
       pnt2 = coords[j];
       sum += ((mid - pnt1) * (mid - pnt2)).length();
@@ -507,4 +531,18 @@ void save_mesh(std::string filename)
 
 }
 
-
+void order_corner_verts(std::vector<moab::EntityHandle> corners, std::vector<moab::EntityHandle>& ordered_corners)
+{
+  ordered_corners.clear(); ordered_corners.resize(4);
+  for(unsigned int i = 0; i < corners.size() ; i++)
+    {
+      moab::CartVect v_coords;
+      mk->moab_instance()->get_coords( &(corners[i]), 1, v_coords.array() );
+      double x = v_coords[0]; double y = v_coords[2];
+      // again, our surface is cenetered on the origin
+      if ( x < 0 && y < 0) ordered_corners[0] = corners[i];
+      else if ( x < 0 && y > 0) ordered_corners[1] = corners[i];
+      else if ( x > 0 && y > 0) ordered_corners[2] = corners[i];
+      else if ( x > 0 && y < 0) ordered_corners[3] = corners[i];
+    }
+}
