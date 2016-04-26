@@ -70,6 +70,7 @@ int main(int argc, char** argv)
       assert( min_wsr <= max_wsr );
       if (max_wsr == min_wsr)  assert( 1 == wsr_intervals ); 
       
+
       
       
       double A_f = 0;
@@ -86,7 +87,7 @@ int main(int argc, char** argv)
 	  A_f = (double)i * ( max_A_f / area_intervals);
 	  //write this value to params file everytime
 	  
-	  for(unsigned int j=0; j < valence_intervals; j++)
+	  for(unsigned int j=0; j < valence_intervals+1; j++)
 	    {
 	      valence = (double)j * ( max_n / valence_intervals );
 
