@@ -4,8 +4,8 @@
 
 #include "ray_fire.hpp"
 #include "DagMC.hpp"
-#include "MBCore.hpp"
-#include "MBCartVect.hpp"
+#include "moab/Core.hpp"
+#include "moab/CartVect.hpp"
 #include <sys/resource.h>
 
 void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_rays, double &avg_fire_time, moab::CartVect ray_source)
@@ -32,9 +32,9 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
     RNDVEC(uvw, location_az);
     
     xyz = uvw * source_rad + ray_source;
-    if (source_rad >= 0.0) {
-      RNDVEC(uvw, direction_az);
-    }
+    // if (source_rad >= 0.0) {
+    //   RNDVEC(uvw, direction_az);
+    // }
     
 #ifdef DEBUG
     std::cout << "x,y,z,u,v,w,u^2 + v^2 + w^2 = " << xyz 
@@ -44,7 +44,11 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
     // added ray orientation
     dagi->ray_fire(vol, xyz.array(), uvw.array(), dum, dist, NULL, 0, 1, &trv_stats );
     
-    if( dum == 0){ random_rays_missed++; }
+    if( dum == 0){
+      // std::cout << "Ray origin: " << xyz << std::endl;
+      // std::cout << "Ray direction: " << uvw << std::endl;
+      random_rays_missed++;
+    }
     
   }
   //end timer 

@@ -5,8 +5,8 @@
 #include <time.h>
 
 #include "DagMC.hpp"
-#include "MBCore.hpp"
-#include "MBCartVect.hpp"
+#include "moab/Core.hpp"
+#include "moab/CartVect.hpp"
 
 ////// Functions for analyzing the hv region \\\\\\\\\\\\\
 
