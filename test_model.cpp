@@ -8,8 +8,8 @@
 
 //sigma includes
 #include "moab/ProgOptions.hpp"
-#include "MBCartVect.hpp"
-#include "MBCore.hpp"
+#include "moab/CartVect.hpp"
+#include "moab/Core.hpp"
 #include "DagMC.hpp"
 #include "InitCGMA.hpp"
 #include "GeometryQueryTool.hpp"
@@ -129,7 +129,8 @@ int main( int argc, char** argv)
       
       std::cout << "The average fire time for this mesh was: " << tot_avg << std::endl; 
 
-      //clear everything in this moab instance and destroy the DagMC instance 
+      //clear everything in this moab instance and destroy the DagMC instance
+      ERR_CHECK(rval);
       rval = mb->delete_mesh();
       ERR_CHECK(rval);
 
