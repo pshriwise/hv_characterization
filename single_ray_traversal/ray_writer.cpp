@@ -29,6 +29,14 @@ ErrorCode RayTraversalWriter::visit( EntityHandle node,
     rval = MBI->add_entities(*writeSet, &hex, 1);
     MB_CHK_SET_ERR(rval, "Could not add box hex to output set.");
   }
+  
 };
 
+
+ErrorCode RayTraversalWriter::write_output_file()
+{
+  //write out everything in the writeSet in vtk format
+  ErrorCode rval = MBI->write_mesh("ray_traversal.vtk", writeSet, 1);
+  MB_CHK_SET_ERR(rval, "Could not write the output mesh file.");
+}
 //NO DEFINITION FOR LEAF METHOD, WE HAVE NOTHING TO DO THERE

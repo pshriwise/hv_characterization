@@ -70,6 +70,8 @@ public:
 
   virtual ErrorCode visit( EntityHandle node,
 			   int depth,
-			   bool& descend );  
+			   bool& descend );
+
+  ErrorCode write_output_file();
     
 };
