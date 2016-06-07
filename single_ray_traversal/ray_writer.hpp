@@ -11,7 +11,6 @@
 #include "moab/OrientedBoxTreeTool.hpp"
 #include "moab/CartVect.hpp"
 
-//#include "/home/shriwise/opt/dagmc_bld/moab/moab_src/src/OrientedBox.hpp"
 
 
 using namespace moab;
@@ -21,7 +20,8 @@ class RayTraversalWriter : public moab::OrientedBoxTreeTool::Op
 
 private:
   //addition interface used to track and write these elements
-  Interface *MBI2;
+  EntityHandle *writeSet;
+  Interface *MBI;
   
   OrientedBoxTreeTool* tool;
   const CartVect       ray_origin;
@@ -48,19 +48,28 @@ public:
      nonneg_ray_len(nonneg_ray_length), neg_ray_len(neg_ray_length),
      tol(tolerance), minTolInt(min_tol_intersections), rootSet(root_set)
   {
+    ErrorCode rval;
     // check the limits  
-        if(nonneg_ray_len) {
-          assert(0 <= *nonneg_ray_len);
-        } 
-        if(neg_ray_len) {
-          assert(0 > *neg_ray_len);
-        }
+    if(nonneg_ray_len) {
+      assert(0 <= *nonneg_ray_len);
+    } 
+    if(neg_ray_len) {
+      assert(0 > *neg_ray_len);
+    }
+    
+    if ( MBI == NULL ) {
+      MBI = tool->get_moab_instance();
+    }
+    
+    if ( writeSet == NULL) {
+      rval = MBI->create_meshset(MESHSET_SET, *writeSet);
+      MB_CHK_ERR_CONT(rval);//, "Could not create the meshset to hold hexes.");
+    }
+	  
   };
 
   virtual ErrorCode visit( EntityHandle node,
 			   int depth,
 			   bool& descend );  
     
-    
-  
 };

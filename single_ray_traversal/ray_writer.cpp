@@ -19,7 +19,16 @@ ErrorCode RayTraversalWriter::visit( EntityHandle node,
   descend = box.intersect_ray( ray_origin, ray_direction, tol, nonneg_ray_len, 
 			       neg_ray_len );
 
-  //if the ray does intersect the box we want to transfer that box and tag it with its depth in the tree
+  //if the ray does intersect the box
+  if (descend) {
+    //createa a hex from this box 
+    EntityHandle hex;
+    rval = box.make_hex( hex, MBI );
+    MB_CHK_SET_ERR(rval, "Could not create hex from box.");
+    // add it to the MeshSet we want to write out
+    rval = MBI->add_entities(*writeSet, &hex, 1);
+    MB_CHK_SET_ERR(rval, "Could not add box hex to output set.");
+  }
 };
 
 //NO DEFINITION FOR LEAF METHOD, WE HAVE NOTHING TO DO THERE
