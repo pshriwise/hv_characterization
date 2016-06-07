@@ -12,6 +12,7 @@ parser.add_argument('--title',dest='plt_title', type=str,
                     default='High Valance Characterizaion Timing Plot',
                     help = 'Used to set the title of the created plot')
 parser.add_argument('--no-log',dest='no_log',action='store_true',default=False,help='Indicates that the colorbar should not be in log scale.')
+parser.add_argument('--save-plot',dest='save_plot',action='store_true',default=False,help="Save file to png with plot title and do not output to screen.")
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -20,13 +21,13 @@ raw = np.fromfile(args.datafile,dtype=float,count=-1,sep="\t")
 raw = raw.reshape((raw.shape[0]/4,4))
 
 #Average and remove duplicate values
-raw = (raw[0::2]+raw[1::2])/2
+#raw = (raw[0::2]+raw[1::2])/2
 
 #Get unique X,Y,Z values
 X = np.unique(raw[:,0])
 
 Y = np.unique(raw[:,1])
-
+print raw[:,3].shape, X.shape, Y.shape
 Z = raw[:,3].reshape(Y.shape[0],X.shape[0]) #third column is the split ratio value
 
 Xv,Yv = np.meshgrid(X,Y)
@@ -43,10 +44,15 @@ if args.no_log:
 else:
     mesh = plt.pcolormesh(Xv,Yv,Z,norm=colors.LogNorm())
 
-mesh.set_clim(1e-6,1e-03)
+mesh.set_clim(1e-6,1e-02)
 cb = plt.colorbar(format = '%2.0E')
 cb.set_label("Time (s)")
-plt.show()
+
+
+if args.save_plot:
+    plt.savefig(args.plt_title.replace(" ","_")+".png")
+else:
+    plt.show()
 
 
 

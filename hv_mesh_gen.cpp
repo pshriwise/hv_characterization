@@ -22,8 +22,9 @@ MKCore *mk = new MKCore();
 moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_time, double worst_split_ratio )
 {
 
+  std::cout << "TESTING MESH - Valence: " << valence << " Area Fraction: " << A_f << std::endl;
 	  prep_mesh( A_f, valence);
-
+	  
 	  ////////////// START OF MOAB STUFF \\\\\\\\\\\\\\\\\\\\\\\	\
 
 	  moab::OrientedBoxTreeTool::Settings settings; 
