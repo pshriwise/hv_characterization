@@ -25,6 +25,10 @@ ErrorCode RayTraversalWriter::visit( EntityHandle node,
     EntityHandle hex;
     rval = box.make_hex( hex, MBI );
     MB_CHK_SET_ERR(rval, "Could not create hex from box.");
+    //tag hex with it's depth in the tree
+    void* ptr = &depth;
+    rval = MBI->tag_set_data( depth_tag, &hex, 1, ptr);
+    MB_CHK_SET_ERR(rval, "Could not tag hex with depth value.");
     // add it to the MeshSet we want to write out
     rval = MBI->add_entities(*writeSet, &hex, 1);
     MB_CHK_SET_ERR(rval, "Could not add box hex to output set.");

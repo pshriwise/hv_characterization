@@ -22,6 +22,7 @@ private:
   //addition interface used to track and write these elements
   EntityHandle *writeSet;
   Interface *MBI;
+  Tag depth_tag;
   
   OrientedBoxTreeTool* tool;
   const CartVect       ray_origin;
@@ -43,10 +44,12 @@ public:
 		      const double*              neg_ray_length,
                       double                     tolerance,
                       int                        min_tol_intersections,
-		      EntityHandle*              root_set)
+		      EntityHandle*              root_set,
+		      EntityHandle*              write_set = NULL)
     :tool(tool_ptr), ray_origin(ray_point), ray_direction(unit_ray_dir),
      nonneg_ray_len(nonneg_ray_length), neg_ray_len(neg_ray_length),
-     tol(tolerance), minTolInt(min_tol_intersections), rootSet(root_set)
+     tol(tolerance), minTolInt(min_tol_intersections), rootSet(root_set),
+     writeSet(write_set)
   {
     ErrorCode rval;
     // check the limits  
@@ -65,6 +68,11 @@ public:
       rval = MBI->create_meshset(MESHSET_SET, *writeSet);
       MB_CHK_ERR_CONT(rval);//, "Could not create the meshset to hold hexes.");
     }
+
+    //create the integer tag for hexes
+    std::string depth_tag_name = "TREE_DEPTH";
+    rval = MBI->tag_get_handle( depth_tag_name.c_str(), 1, MB_TYPE_INTEGER, depth_tag, MB_TAG_DENSE|MB_TAG_CREAT);
+    MB_CHK_ERR_CONT(rval);
 	  
   };
 
