@@ -80,6 +80,8 @@ public:
 			   int depth,
 			   bool& descend );
 
+  virtual ErrorCode leaf( EntityHandle node );
+
   ErrorCode write_output_file();
     
 };

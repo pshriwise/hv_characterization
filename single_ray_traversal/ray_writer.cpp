@@ -36,11 +36,12 @@ ErrorCode RayTraversalWriter::visit( EntityHandle node,
   
 };
 
+ErrorCode RayTraversalWriter::leaf( EntityHandle node ) { return MB_SUCCESS; };
 
 ErrorCode RayTraversalWriter::write_output_file()
 {
   //write out everything in the writeSet in vtk format
   ErrorCode rval = MBI->write_mesh("ray_traversal.vtk", writeSet, 1);
   MB_CHK_SET_ERR(rval, "Could not write the output mesh file.");
+  return rval;
 }
-//NO DEFINITION FOR LEAF METHOD, WE HAVE NOTHING TO DO THERE
