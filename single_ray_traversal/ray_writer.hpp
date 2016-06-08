@@ -20,7 +20,7 @@ class RayTraversalWriter : public moab::OrientedBoxTreeTool::Op
 
 private:
   //addition interface used to track and write these elements
-  EntityHandle *writeSet;
+  EntityHandle writeSet;
   Interface *MBI;
   Tag depth_tag;
   
@@ -44,12 +44,10 @@ public:
 		      const double*              neg_ray_length,
                       double                     tolerance,
                       int                        min_tol_intersections,
-		      EntityHandle*              root_set,
-		      EntityHandle*              write_set = NULL)
+		      EntityHandle*              root_set)
     :tool(tool_ptr), ray_origin(ray_point), ray_direction(unit_ray_dir),
      nonneg_ray_len(nonneg_ray_length), neg_ray_len(neg_ray_length),
-     tol(tolerance), minTolInt(min_tol_intersections), rootSet(root_set),
-     writeSet(write_set)
+     tol(tolerance), minTolInt(min_tol_intersections), rootSet(root_set)
   {
     ErrorCode rval;
     // check the limits  
@@ -60,14 +58,10 @@ public:
       assert(0 > *neg_ray_len);
     }
     
-    if ( MBI == NULL ) {
-      MBI = tool->get_moab_instance();
-    }
+    MBI = tool->get_moab_instance();
     
-    if ( writeSet == NULL) {
-      rval = MBI->create_meshset(MESHSET_SET, *writeSet);
-      MB_CHK_ERR_CONT(rval);//, "Could not create the meshset to hold hexes.");
-    }
+    rval = MBI->create_meshset(MESHSET_SET, writeSet);
+    MB_CHK_ERR_CONT(rval);//, "Could not create the meshset to hold hexes.");
 
     //create the integer tag for hexes
     std::string depth_tag_name = "TREE_DEPTH";

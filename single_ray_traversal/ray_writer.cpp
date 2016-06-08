@@ -30,7 +30,7 @@ ErrorCode RayTraversalWriter::visit( EntityHandle node,
     rval = MBI->tag_set_data( depth_tag, &hex, 1, ptr);
     MB_CHK_SET_ERR(rval, "Could not tag hex with depth value.");
     // add it to the MeshSet we want to write out
-    rval = MBI->add_entities(*writeSet, &hex, 1);
+    rval = MBI->add_entities(writeSet, &hex, 1);
     MB_CHK_SET_ERR(rval, "Could not add box hex to output set.");
   }
   
@@ -41,7 +41,7 @@ ErrorCode RayTraversalWriter::leaf( EntityHandle node ) { return MB_SUCCESS; };
 ErrorCode RayTraversalWriter::write_output_file()
 {
   //write out everything in the writeSet in vtk format
-  ErrorCode rval = MBI->write_mesh("ray_traversal.vtk", writeSet, 1);
+  ErrorCode rval = MBI->write_mesh("ray_traversal.vtk", &writeSet, 1);
   MB_CHK_SET_ERR(rval, "Could not write the output mesh file.");
   return rval;
 }
