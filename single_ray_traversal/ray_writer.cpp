@@ -25,11 +25,11 @@ ErrorCode RayTraversalWriter::visit( EntityHandle node,
   if (descend) {
     //createa a hex from this box 
     EntityHandle hex;
-    rval = box.make_hex( hex, MBI );
+    rval = box.make_hex(hex, MBI);
     MB_CHK_SET_ERR(rval, "Could not create hex from box.");
     //tag hex with it's depth in the tree
     void* ptr = &depth;
-    rval = MBI->tag_set_data( depth_tag, &hex, 1, ptr);
+    rval = MBI->tag_set_data(depth_tag, &hex, 1, ptr);
     MB_CHK_SET_ERR(rval, "Could not tag hex with depth value.");
     // add it to the MeshSet we want to write out
     rval = MBI->add_entities(writeSet, &hex, 1);
@@ -48,6 +48,40 @@ ErrorCode RayTraversalWriter::write_single_output_file()
   return rval;
 }
 
+ErrorCode RayTraversalWriter::write_ray_file()
+{
+
+  ErrorCode rval;
+  //create ray_dir tag for vector representation of ray
+  Tag ray_dir_tag;
+  std::string ray_dir_name = "RAY_DIR";
+  rval = MBI->tag_get_handle(ray_dir_name.c_str(), 3, MB_TYPE_DOUBLE, ray_dir_tag, MB_TAG_SPARSE|MB_TAG_CREAT);
+  MB_CHK_ERR_CONT(rval);
+
+  EntityHandle temp_set;
+  rval = MBI->create_meshset(MESHSET_SET, temp_set);
+  MB_CHK_SET_ERR(rval, "Could not create temporary meshset for output.");
+  
+  //create new verex for ray origin and tag with ray direction
+  EntityHandle vert;
+  rval = MBI->create_vertex(ray_origin.array(), vert);
+  MB_CHK_ERR_CONT(rval);
+  10*ray_direction;
+  const void *ptr = ray_direction.array();
+  rval = MBI->tag_set_data(ray_dir_tag, &vert, 1, ptr);
+  MB_CHK_ERR_CONT(rval);
+  ray_direction/10;
+  //add this vert to the output set
+  rval = MBI->add_entities(temp_set, &vert, 1);
+  MB_CHK_ERR_CONT(rval);
+
+  //write the ray to its own vtk file
+  rval = MBI->write_mesh("RAY.vtk", &temp_set, 1);
+  MB_CHK_SET_ERR(rval, "Could not write the ray vector file.");
+
+  return rval;
+  
+};
 
 ErrorCode RayTraversalWriter::write_vtk_database()
 {
@@ -80,6 +114,6 @@ ErrorCode RayTraversalWriter::write_vtk_database()
     rval = MBI->write_mesh(output_filename.c_str(), &temp_set, 1);
     MB_CHK_SET_ERR(rval, "Could not write vtk datbase file.");
   }
-  
+
   return rval;  
 };

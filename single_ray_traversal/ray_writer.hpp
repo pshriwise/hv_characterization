@@ -66,7 +66,7 @@ public:
 
     //create the integer tag for hexes
     std::string depth_tag_name = "TREE_DEPTH";
-    rval = MBI->tag_get_handle( depth_tag_name.c_str(), 1, MB_TYPE_INTEGER, depth_tag, MB_TAG_DENSE|MB_TAG_CREAT);
+    rval = MBI->tag_get_handle(depth_tag_name.c_str(), 1, MB_TYPE_INTEGER, depth_tag, MB_TAG_DENSE|MB_TAG_CREAT);
     MB_CHK_ERR_CONT(rval);
 	  
   };
@@ -76,7 +76,8 @@ public:
 			   bool& descend );
 
   virtual ErrorCode leaf( EntityHandle node );
-
+  
+  ErrorCode write_ray_file();
   ErrorCode write_single_output_file();
   ErrorCode write_vtk_database();
 };
