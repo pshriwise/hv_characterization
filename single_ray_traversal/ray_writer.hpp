@@ -23,7 +23,7 @@ private:
   EntityHandle writeSet;
   Interface *MBI;
   Tag depth_tag;
-  
+  int max_depth;
   OrientedBoxTreeTool* tool;
   const CartVect       ray_origin;
   const CartVect       ray_direction;
@@ -47,7 +47,8 @@ public:
 		      EntityHandle*              root_set)
     :tool(tool_ptr), ray_origin(ray_point), ray_direction(unit_ray_dir),
      nonneg_ray_len(nonneg_ray_length), neg_ray_len(neg_ray_length),
-     tol(tolerance), minTolInt(min_tol_intersections), rootSet(root_set)
+     tol(tolerance), minTolInt(min_tol_intersections), rootSet(root_set),
+     max_depth(0)
   {
     ErrorCode rval;
     // check the limits  
@@ -76,6 +77,6 @@ public:
 
   virtual ErrorCode leaf( EntityHandle node );
 
-  ErrorCode write_output_file();
-    
+  ErrorCode write_single_output_file();
+  ErrorCode write_vtk_database();
 };

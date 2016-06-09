@@ -16,6 +16,7 @@ int main (int argc, char** argv)
   int vol_id;
   double ray_origin[3], ray_dir[3];
   std::string fn;
+  bool database_output = false;
   po.addRequiredArg<double>("x", "Ray origin's x position", &(ray_origin[0]));
   po.addRequiredArg<double>("y", "Ray origin's y position", &(ray_origin[1]));
   po.addRequiredArg<double>("z", "Ray origin's z position", &(ray_origin[2]));
@@ -24,7 +25,7 @@ int main (int argc, char** argv)
   po.addRequiredArg<double>("w", "Ray direction w value", &(ray_dir[2]));
   po.addRequiredArg<int>("vol_id", "GLOBAL ID of the volume to fire the ray in", &vol_id);
   po.addRequiredArg<std::string>("filename", "DAGMC model", &fn);
-
+  po.addOpt<void>("db","If present, the program will generate a vtk database in which each file represents the boxes encountered at a different depth in the tree.", &database_output);
   po.parseCommandLine( argc, argv );
 
   //start up MOAB and DAGMC
@@ -73,8 +74,14 @@ int main (int argc, char** argv)
   MB_CHK_SET_ERR(result, "Something went wrong while performing traversal");
 
   //write the desired output file
-  result = rtw.write_output_file();
+  if (database_output) {
+  result = rtw.write_vtk_database();
+  MB_CHK_SET_ERR(result, "Could not write the vtk databse");
+  }
+  else {
+    result = rtw.write_single_output_file();
   MB_CHK_SET_ERR(result, "Could not write the desired output file");
+  }
   
   return 0;
 
