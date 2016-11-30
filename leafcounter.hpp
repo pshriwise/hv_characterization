@@ -4,7 +4,7 @@
 #include "moab/Types.hpp"
 #include "moab/Interface.hpp"
 #include "moab/OrientedBoxTreeTool.hpp"
-#include "../moab_src/src/OrientedBox.hpp"
+#include "moab/OrientedBox.hpp"
 
 
 using namespace moab;

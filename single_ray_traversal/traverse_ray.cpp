@@ -29,7 +29,7 @@ int main (int argc, char** argv)
   po.parseCommandLine( argc, argv );
 
   //start up MOAB and DAGMC
-  moab::DagMC *DAG = moab::DagMC::instance();
+  moab::DagMC *DAG = new moab::DagMC();
   moab::Interface *MBI = DAG->moab_instance();
   //load the file
   moab::ErrorCode result;
