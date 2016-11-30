@@ -62,3 +62,5 @@ TARGET_LINK_LIBRARIES(hv_cube ${DAGMC_LIBRARIES})
 
 
 ADD_SUBDIRECTORY(single_ray_traversal)
+
+INSTALL(TARGETS test_model sweep write_obbs count_leaves hv_cube DESTINATION ${CMAKE_INSTALL_PREFIX})
