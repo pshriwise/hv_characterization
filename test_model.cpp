@@ -11,8 +11,6 @@
 #include "moab/CartVect.hpp"
 #include "moab/Core.hpp"
 #include "DagMC.hpp"
-#include "InitCGMA.hpp"
-#include "GeometryQueryTool.hpp"
 
 //local includes
 #include "ray_fire.hpp"
@@ -99,7 +97,7 @@ int main( int argc, char** argv)
       tri_numbers.push_back( int(tris.size()) ); 
 
       //hand model's moab instance to dagmc
-      DagMC *dag = DagMC::instance(mb); 
+      DagMC *dag = new moab::DagMC(mb); 
       
       rval = dag->load_existing_contents(); 
       ERR_CHECK(rval); 
@@ -134,9 +132,6 @@ int main( int argc, char** argv)
       rval = mb->delete_mesh();
       ERR_CHECK(rval);
 
-      InitCGMA::initialize_cgma(); 
-      GeometryQueryTool::instance()->delete_geometry(); //don't want to talk about it
-      
       timing.push_back( tot_avg ); 
     }
 

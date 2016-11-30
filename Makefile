@@ -8,19 +8,9 @@ MPICC = mpic++
 
 # LIBS += ${DAGMC_LIBS_LINK}
 
-
-
-INCLUDE_DIRS = -I/home/shriwise/dagmc_blds/lasso/include \
-	       -I/home/shriwise/dagmc_blds/cgm_dev/include/ \
-               -I/home/shriwise/dagmc_blds/moabs/include \
-	       -I/home/shriwise/dagmc_blds/meshkit/include/ \
-               -I/home/shriwise/dagmc_blds/cgm_dev/include
+INCLUDE_DIRS = -I/home/shriwise/dagmc_blds/moabs/include \
 
 LIBS = -L/home/shriwise/dagmc_blds/moabs/lib/ -lMOAB -ldagmc \
-       -L/home/shriwise/dagmc_blds/meshkit/lib/ -lMeshKit \
-       -L/home/shriwise/dagmc_blds/cgm_dev/lib -lcgm \
-#       -L/home/shriwise/Cubits/14/bin -lcubiti19 -lcubit_geom -lcubit_util
-
 
 all: build
 

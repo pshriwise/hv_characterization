@@ -1,16 +1,11 @@
 
 
-#include "meshkit/MKCore.hpp"
-#include "meshkit/ModelEnt.hpp"
-#include "gen.hpp"
 #include "DagMC.hpp"
 #include "moab/OrientedBoxTreeTool.hpp"
 
 //local includes
 #include "obbhexwriter.hpp"
 #include "gen_mb_funcs.hpp"
-
-using namespace MeshKit;
 
 
 ////// Functions for generating the hv region \\\\\\\\\\
@@ -26,7 +21,7 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
 void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> box_verts, int n );
 // returns a surface that is constant in Z
 
-void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf );
+void get_hv_surf( moab::EntityHandle &hv_surf );
 // removes and deletes all triangles in the given surface
 void tear_down_surface( moab::EntityHandle surf );
 // returns the area of a polygon given the ordered verts

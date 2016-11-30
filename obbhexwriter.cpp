@@ -1,7 +1,6 @@
 
 #include "obbhexwriter.hpp"
 #include "moab/Types.hpp"
-#include "meshkit/MKCore.hpp"
 
 using namespace moab;
 

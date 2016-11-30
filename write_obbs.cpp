@@ -24,7 +24,7 @@ int main( int argc, char** argv)
 
 
   //start a dagmc instance and load the modified cube file
-  moab::DagMC *dag_inst = moab::DagMC::instance();
+  moab::DagMC *dag_inst = new moab::DagMC();
 
   moab::ErrorCode result;
   result = dag_inst->load_file( filename.c_str() );

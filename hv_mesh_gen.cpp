@@ -3,10 +3,6 @@
 #include <assert.h>
 
 //Sigma Includes
-#include "meshkit/MKCore.hpp"
-#include "meshkit/ModelEnt.hpp"
-#include "meshkit/SurfaceFacetMeshReader.hpp"
-#include "gen.hpp"
 #include "DagMC.hpp"
 #include "moab/OrientedBoxTreeTool.hpp"
 
@@ -15,9 +11,7 @@
 #include "gen_mb_funcs.hpp"
 #include "ray_fire.hpp"
 
-using namespace MeshKit;
-
-MKCore *mk = new MKCore();
+moab::Interface *mbi = new moab::Core();
 
 moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_time, double worst_split_ratio )
 {
@@ -35,7 +29,8 @@ moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_
 	  settings.set_options = MESHSET_SET;
 
 	  //now we'll try to load this mesh-file into a dagmc instance
-	  moab::DagMC *dag = moab::DagMC::instance( mk->moab_instance(), &settings );
+	  moab::DagMC *dag = new moab::DagMC( mbi );
+	  moab::OrientedBoxTreeTool obbTool = *dag->obb_tree();
 
 	  moab::ErrorCode result;
 	  
@@ -61,11 +56,11 @@ moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_
 	  fire_rand_rays( dag, vols[0], 100000, avg_fire_time, source);
 	  //write time to data file
 
-	  mk->save_mesh("hvcube.h5m");
+	  mbi->write_mesh("hvcube.h5m");
 	  std::cout << "The average fire time for this mesh was: " << avg_fire_time << "s" << std::endl;
 	  ray_fire_time = avg_fire_time;
 	  
-	  mk->delete_all();
+	  mbi->delete_mesh();
 	  return MB_SUCCESS;
 
 }
@@ -73,26 +68,120 @@ moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_
 
 void create_cube()
 {
+  // Define a 2x2x2 cube centered at orgin
+  // with concavity in +Z face.
+  const double coords[] = {
+    50, -50, -50, 
+    50,  50, -50,
+   -50,  50, -50,
+   -50, -50, -50,
+    50, -50,  50, 
+    50,  50,  50,
+   -50,  50,  50,
+   -50, -50,  50};
+  const int connectivity[] = {
+    0, 3, 1,  3, 2, 1, // -Z
+    0, 1, 4,  5, 4, 1, // +X
+    1, 2, 6,  6, 5, 1, // +Y
+    6, 2, 3,  7, 6, 3, // -X
+    0, 4, 3,  7, 3, 4, // -Y
+    4, 5, 7,  5, 6, 7, // +Z
+  };
+  unsigned tris_per_surf[] = { 2, 2, 2, 2, 2, 2 };
 
-  //create the cube
-  iGeom::EntityHandle cube;
-  mk->igeom_instance()->createBrick( 100, 100, 100, cube);
+   // Create the geometry
+  const unsigned num_verts = sizeof(coords) / (3*sizeof(double));
+  const unsigned num_tris = sizeof(connectivity) / (3*sizeof(int));
+  const unsigned num_surfs = sizeof(tris_per_surf) / sizeof(unsigned);
+  EntityHandle verts[num_verts], tris[num_tris], surfs[num_surfs];
+  moab::ErrorCode rval;
+  for (unsigned i = 0; i < num_surfs; ++i) {
+    rval = mbi->create_meshset( MESHSET_SET, surfs[i] );
+    MB_CHK_ERR_CONT(rval);
+  }
+  for (unsigned i = 0; i < num_verts; ++i) {
+    rval = mbi->create_vertex( coords + 3*i, verts[i] ); 
+    MB_CHK_ERR_CONT(rval);
+  }
+  EntityHandle *surf_iter = surfs;
+  unsigned *tps = tris_per_surf;
+  for (unsigned i = 0, j = 0; i < num_tris; ++i, ++j) {
+    const EntityHandle conn[] = { verts[connectivity[3*i  ]], 
+                                    verts[connectivity[3*i+1]], 
+                                    verts[connectivity[3*i+2]] };
+    rval = mbi->create_element( MBTRI, conn, 3, tris[i] );
+    MB_CHK_ERR_CONT(rval);
+    rval = mbi->add_entities(*surf_iter, &tris[i], 1);
+    MB_CHK_ERR_CONT(rval);
+    rval = mbi->add_entities(*surf_iter, &conn[0], 3);
+    MB_CHK_ERR_CONT(rval);
+    if (j == *tps) {
+      surf_iter++;
+      tps++;
+      j = 0;
+    }
+  }
+    
+  Tag dim_tag, id_tag, sense_tag, category_tag;
+  rval = mbi->tag_get_handle( GEOM_DIMENSION_TAG_NAME, 
+                              1, MB_TYPE_INTEGER, 
+                              dim_tag,
+                              MB_TAG_SPARSE|MB_TAG_CREAT );
+  MB_CHK_ERR_CONT(rval);
+  rval = mbi->tag_get_handle( GLOBAL_ID_TAG_NAME, 
+                              1, MB_TYPE_INTEGER, 
+                              id_tag,
+                              MB_TAG_DENSE|MB_TAG_CREAT );
+  MB_CHK_ERR_CONT(rval);
+  rval = mbi->tag_get_handle( CATEGORY_TAG_NAME, 
+                              CATEGORY_TAG_SIZE, MB_TYPE_OPAQUE, 
+                              category_tag,
+                              MB_TAG_SPARSE|MB_TAG_CREAT );
+  MB_CHK_ERR_CONT(rval);
+  rval = mbi->tag_get_handle( "GEOM_SENSE_2", 
+                              2, MB_TYPE_HANDLE, 
+                              sense_tag,
+                              MB_TAG_SPARSE|MB_TAG_CREAT );
+  MB_CHK_ERR_CONT(rval);
 
-  //populate the model entities
-  mk->populate_model_ents();
+  std::vector<int> dims( num_surfs, 2 );
+  rval = mbi->tag_set_data( dim_tag, surfs, num_surfs, &dims[0] );
+  MB_CHK_ERR_CONT(rval);
+  char surf[CATEGORY_TAG_SIZE] = "Surface";
+  for( unsigned int i = 0; i < num_surfs; i++) {
+    rval = mbi->tag_set_data( category_tag, &surfs[i], num_surfs, &surf[0]);
+    MB_CHK_ERR_CONT(rval);
+  }
+  std::vector<int> ids( num_surfs );
+  for (size_t i = 0; i < ids.size(); ++i) ids[i] = i+1;
+  rval = mbi->tag_set_data( id_tag, surfs, num_surfs, &ids[0] );
+  MB_CHK_ERR_CONT(rval);
 
-  MEntVector surfs;
-  mk->get_entities_by_dimension(2,surfs);
-
-  SurfaceFacetMeshReader *sfmr;
-  sfmr = (SurfaceFacetMeshReader*) mk->construct_meshop("SurfaceFacetMeshReader", surfs);
-
-  double facet_tol = 1e-04, geom_resabs = 1e-06;
-  sfmr->set_mesh_params(facet_tol, geom_resabs);
-
-  mk->setup();
-  mk->execute();  
-
+  EntityHandle volume;
+  rval = mbi->create_meshset( MESHSET_SET, volume );
+  MB_CHK_ERR_CONT(rval);
+  for (unsigned i = 0; i < num_surfs; ++i) {
+    rval = mbi->add_parent_child( volume, surfs[i] );
+    MB_CHK_ERR_CONT(rval);
+  }
+  
+  std::vector<EntityHandle> senses( 2*num_surfs, 0 );
+  for (size_t i = 0; i < senses.size(); i += 2)
+    senses[i] = volume;
+  rval = mbi->tag_set_data( sense_tag, surfs, num_surfs, &senses[0] );
+  MB_CHK_ERR_CONT(rval);
+  
+  const int three = 3;
+  const int one = 1;
+  char volume_cat[CATEGORY_TAG_SIZE] = "Volume";
+  rval = mbi->tag_set_data( dim_tag, &volume, 1, &three );
+  MB_CHK_ERR_CONT(rval);
+  rval = mbi->tag_set_data( id_tag, &volume, 1, &one );
+  MB_CHK_ERR_CONT(rval);
+  rval = mbi->tag_set_data( category_tag, &volume, 1, &volume_cat[0]);
+  MB_CHK_ERR_CONT(rval);
+  rval = mbi->write_mesh( "cube.h5m" );
+  MB_CHK_ERR_CONT(rval);
 }
 
 
@@ -103,14 +192,10 @@ void prep_mesh( double A_f, int valence )
   create_cube();
 
   //Get all of the surface ModelEnts
-  MEntVector surfs;
-  mk->get_entities_by_dimension(2, surfs);
   
-  std::cout << "There are " << surfs.size() << " surfaces in this model." << std::endl;
-  assert( 6 == surfs.size() ); 
   //Now to find one of the surfaces that is constant in z (for convenience)
   moab::EntityHandle hv_surf;
-  get_hv_surf( surfs, hv_surf );
+  get_hv_surf( hv_surf );
 
   //refacet the surface using the desired area fraction for the hv region
   refacet_surface( hv_surf, A_f, valence );
@@ -156,7 +241,8 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
   }
 
   std::vector<moab::EntityHandle> corners;
-  mk->moab_instance()->get_entities_by_type( surf, MBVERTEX, corners );
+  moab::ErrorCode rval = mbi->get_entities_by_type( surf, MBVERTEX, corners );
+  MB_CHK_ERR_CONT(rval);
 
   double surface_area = polygon_area( corners );
   //going to start taking advantage of knowing the geometry here...
@@ -175,7 +261,7 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
     }
 
   double hv_area = A_f*cube_area/6; //divide by 6 because this surface represents all surfaces of the cube
-  if ( hv_area >= surface_area ) std::cout << "ERROR: Area fraction must be less than 1/6 for now." << std::endl;
+  if ( hv_area >= surface_area ) std::cout << "ERROR: Area fraction must be less than 1/6 for now. " << surf << std::endl;
   assert( hv_area < surface_area );
   double hv_side = sqrt(hv_area);
 
@@ -205,7 +291,7 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
     {
       //first get the coordinates of this corner
       moab::CartVect coords;
-      mk->moab_instance()->get_coords( &(*i), 1, coords.array() );
+      mbi->get_coords( &(*i), 1, coords.array() );
       
       //need three cartesian vectors telling us where to put the verts, two for the dam points, one for the inner point.
       moab::CartVect to_ewdam, to_nsdam, to_box;
@@ -226,7 +312,7 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
 
       //create the inner point
       moab::EntityHandle box_vert;
-      mk->moab_instance()->create_vertex( (coords+to_box).array(), box_vert);
+      mbi->create_vertex( (coords+to_box).array(), box_vert);
       box.push_back(box_vert);
       
 
@@ -257,7 +343,7 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
 	else to_nsdam[y_idx] = -dam_bump_short;
 
 	//create the dam vertex 
-	mk->moab_instance()->create_vertex( (coords+to_nsdam).array(), *nsdam_vert);
+	mbi->create_vertex( (coords+to_nsdam).array(), *nsdam_vert);
 	
 	//now add this corner and the dam vert to the dam verts list
 	nsdam->push_back(*nsdam_vert); nsdam->push_back(*i);
@@ -279,7 +365,7 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
 	else to_ewdam[y_idx] = -dam_bump_long;
 
 	//create the dam vertex 
-	mk->moab_instance()->create_vertex( (coords+to_ewdam).array(), *ewdam_vert);
+	mbi->create_vertex( (coords+to_ewdam).array(), *ewdam_vert);
 	
 	//now add this corner and the dam vert to the dam verts list
 	ewdam->push_back(*ewdam_vert); ewdam->push_back(*i);
@@ -291,7 +377,7 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
       //there are always two triangles to create that connect the dam
       //to the corner, we'll do that now
       moab::CartVect corner_coords;
-      mk->moab_instance()->get_coords(&(*i), 1, corner_coords.array());
+      mbi->get_coords(&(*i), 1, corner_coords.array());
       moab::EntityHandle tri1_verts[3] = {*i, *nsdam_vert, box_vert};
       moab::EntityHandle tri2_verts[3] = {*i, *ewdam_vert, box_vert};
       if( coords[x_idx] < 0 ) {
@@ -317,13 +403,13 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
 	}
       }
       std::vector<moab::EntityHandle> tris(2);
-      mk->moab_instance()->create_element( MBTRI, &tri1_verts[0], 3, tris[0] );
-      mk->moab_instance()->create_element( MBTRI, &tri2_verts[0], 3, tris[1] );
+      mbi->create_element( MBTRI, &tri1_verts[0], 3, tris[0] );
+      mbi->create_element( MBTRI, &tri2_verts[0], 3, tris[1] );
       
       //now we'll add these to the set
-      mk->moab_instance()->add_entities( surf, &tri1_verts[0], 3 );
-      mk->moab_instance()->add_entities( surf, &tri2_verts[0], 3 );      
-      mk->moab_instance()->add_entities( surf, &(tris[0]), tris.size() );
+      mbi->add_entities( surf, &tri1_verts[0], 3 );
+      mbi->add_entities( surf, &tri2_verts[0], 3 );      
+      mbi->add_entities( surf, &(tris[0]), tris.size() );
     }
 
   //now we should have all of the info needed to create our dam triangles
@@ -335,13 +421,13 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
   temp = wd[1];
   wd[1] = wd[2];
   wd[2] = temp;
-  mk->moab_instance()->create_element( MBTRI, &(nd[0]), nd.size(), dam_tris[0]);
-  mk->moab_instance()->create_element( MBTRI, &(sd[0]), sd.size(), dam_tris[1]);
-  mk->moab_instance()->create_element( MBTRI, &(ed[0]), ed.size(), dam_tris[2]);
-  mk->moab_instance()->create_element( MBTRI, &(wd[0]), wd.size(), dam_tris[3]);
+  mbi->create_element( MBTRI, &(nd[0]), nd.size(), dam_tris[0]);
+  mbi->create_element( MBTRI, &(sd[0]), sd.size(), dam_tris[1]);
+  mbi->create_element( MBTRI, &(ed[0]), ed.size(), dam_tris[2]);
+  mbi->create_element( MBTRI, &(wd[0]), wd.size(), dam_tris[3]);
 
   //add these to the surface
-  mk->moab_instance()->add_entities( surf, &(dam_tris[0]), dam_tris.size() );
+  mbi->add_entities( surf, &(dam_tris[0]), dam_tris.size() );
 
   
   //re-order the M verts
@@ -360,11 +446,11 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
   for(unsigned int i = 0; i < last_few_tris.size(); i++)
     {
       moab::EntityHandle tri_verts[3] = { box_verts[i], all_dam_verts[i], box_verts[i+1] };
-      mk->moab_instance()->create_element( MBTRI, &(tri_verts[0]), 3, last_few_tris[i]);
+      mbi->create_element( MBTRI, &(tri_verts[0]), 3, last_few_tris[i]);
     }
       
   //now add these to the surface
-  mk->moab_instance()->add_entities( surf, &last_few_tris[0], 4);
+  mbi->add_entities( surf, &last_few_tris[0], 4);
 
   box_verts = ordered_box;
   
@@ -386,8 +472,8 @@ void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> bo
   //because we know the order of these verts, we can get the diagonal coordinates directly
   moab::CartVect sw_coords, ne_coords;
 
-  mk->moab_instance()->get_coords( &box_verts[0], 1, sw_coords.array() );
-  mk->moab_instance()->get_coords( &box_verts[2], 1, ne_coords.array() );
+  mbi->get_coords( &box_verts[0], 1, sw_coords.array() );
+  mbi->get_coords( &box_verts[2], 1, ne_coords.array() );
 
   //now create the param vector
   moab::CartVect sw_to_ne = ne_coords-sw_coords;
@@ -401,12 +487,12 @@ void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> bo
       double u = double(i)/double(n);
       moab::CartVect new_coords = sw_coords + u*sw_to_ne;
       moab::EntityHandle new_vert;
-      mk->moab_instance()->create_vertex( new_coords.array(), new_vert);
+      mbi->create_vertex( new_coords.array(), new_vert);
       diag_verts.push_back(new_vert);
     }
 
   //add all of these new verts to the surface
-  mk->moab_instance()->add_entities( surf, &(diag_verts[0]), diag_verts.size() );
+  mbi->add_entities( surf, &(diag_verts[0]), diag_verts.size() );
 
 
   // put the box verts at the front and end
@@ -427,27 +513,41 @@ void make_hv_region( moab::EntityHandle surf, std::vector<moab::EntityHandle> bo
       //creating new tris
       moab::EntityHandle tri1_verts[3] = { nw_vert, diag_verts[i+1], diag_verts[i] };
       moab::EntityHandle tri2_verts[3] = { se_vert, diag_verts[i], diag_verts[i+1] };
-      mk->moab_instance()->create_element( MBTRI, &tri1_verts[0], 3, tri1);
-      mk->moab_instance()->create_element( MBTRI, &tri2_verts[0], 3, tri2);
+      mbi->create_element( MBTRI, &tri1_verts[0], 3, tri1);
+      mbi->create_element( MBTRI, &tri2_verts[0], 3, tri2);
 
       //now add these to the surface set
-      mk->moab_instance()->add_entities( surf, &tri1, 1);
-      mk->moab_instance()->add_entities( surf, &tri2, 1);
+      mbi->add_entities( surf, &tri1, 1);
+      mbi->add_entities( surf, &tri2, 1);
     }
   
 }
 
-void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
+void get_hv_surf(moab::EntityHandle &hv_surf)
 {
+  char category[CATEGORY_TAG_SIZE] = "Surface";
+   //get the name tag from the moab instance
+  moab::Tag category_tag; 
+  moab::ErrorCode result = mbi->tag_get_handle(CATEGORY_TAG_NAME, category_tag); 
+  MB_CHK_ERR_CONT(result); 
+
+  //create void pointer for tag data match
+  const void *dum = &(category[0]);
+  moab::Range surfs;
+  result = mbi->get_entities_by_type_and_tag(0, moab::MBENTITYSET, &category_tag, &dum, 1, surfs);
+  MB_CHK_ERR_CONT(result);
+
+  std::cout << "There are " << surfs.size() << " surfaces in this model." << std::endl;
+  assert( 6 == surfs.size() ); 
 
   for( unsigned int i = 0 ; i < surfs.size() ; i++)
     {
       //get the meshset handle for this surface
-      moab::EntityHandle sh = surfs[i]->mesh_handle();
+      moab::EntityHandle sh = surfs[i];
       
       //get the triangles in this meshset
       std::vector<moab::EntityHandle> tris;
-      mk->moab_instance()->get_entities_by_type( sh, MBTRI, tris);
+      mbi->get_entities_by_type( sh, MBTRI, tris);
       
       //setup a check vector
       moab::CartVect check;
@@ -456,14 +556,15 @@ void get_hv_surf( MEntVector surfs, moab::EntityHandle &hv_surf)
       
       //get the verts for each triangle and their coordinates
       std::vector<moab::EntityHandle> verts;
-      mk->moab_instance()->get_connectivity( &(tris[0]), 1, verts);
+      mbi->get_connectivity( &(tris[0]), 1, verts);
       
       moab::CartVect coords[3];
       
-      mk->moab_instance()->get_coords( &(verts[0]), 3, coords[0].array() );
+      mbi->get_coords( &(verts[0]), 3, coords[0].array() );
       
       moab::CartVect tri_norm;
-      gen::triangle_normal( coords[0], coords[1], coords[2], tri_norm);
+      tri_norm = (coords[1]-coords[0])*(coords[2]-coords[0]);
+      tri_norm.normalize();
       
       if( tri_norm == check){
 	hv_surf = sh;
@@ -478,16 +579,21 @@ void tear_down_surface( moab::EntityHandle surf)
 
  //get the triangles for this surface and delete them
   std::vector<moab::EntityHandle> tris;
-  mk->moab_instance()->get_entities_by_type( surf, MBTRI, tris);
-
+  moab::ErrorCode rval = mbi->get_entities_by_type( surf, MBTRI, tris);
+  MB_CHK_ERR_CONT(rval);
+  
   //remove these triangle from the meshset and destroy them
   std::cout << "Tearing down the surface..." << std::endl; 
 
-  mk->moab_instance()->remove_entities( surf, &(tris[0]), tris.size());
-  mk->moab_instance()->delete_entities( &(tris[0]), tris.size());
+  rval = mbi->remove_entities( surf, &(tris[0]), tris.size());
+  MB_CHK_ERR_CONT(rval);
+
+  rval = mbi->delete_entities( &(tris[0]), tris.size());
+  MB_CHK_ERR_CONT(rval);
 
   std::vector<moab::EntityHandle> test_tris;
-  mk->moab_instance()->get_entities_by_type( 0, MBTRI, test_tris, true);
+  rval = mbi->get_entities_by_type( 0, MBTRI, test_tris, true);
+  MB_CHK_ERR_CONT(rval);
   std::cout << "There are now " << test_tris.size() << " triangles in the model" << std::endl;
 
 }
@@ -500,7 +606,7 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
 
   //get the coordinates of the vertices
   double vert_coords[verts.size()*3];
-  mk->moab_instance()->get_coords( &(verts[0]), verts.size(), &(vert_coords[0]) );
+  mbi->get_coords( &(verts[0]), verts.size(), &(vert_coords[0]) );
 
   const moab::CartVect* coords = reinterpret_cast<const moab::CartVect*>(vert_coords);  
 
@@ -528,7 +634,7 @@ double polygon_area( std::vector<moab::EntityHandle> verts)
 void save_mesh(std::string filename)
 {
 
-  mk->save_mesh( filename.c_str() );
+  mbi->write_mesh( filename.c_str() );
 
 }
 
@@ -538,7 +644,7 @@ void order_corner_verts(std::vector<moab::EntityHandle> corners, std::vector<moa
   for(unsigned int i = 0; i < corners.size() ; i++)
     {
       moab::CartVect v_coords;
-      mk->moab_instance()->get_coords( &(corners[i]), 1, v_coords.array() );
+      mbi->get_coords( &(corners[i]), 1, v_coords.array() );
       double x = v_coords[0]; double y = v_coords[2];
       // again, our surface is cenetered on the origin
       if ( x < 0 && y < 0) ordered_corners[0] = corners[i];
