@@ -1,5 +1,7 @@
 data/
 bin/
+bld/
 *.vtk
 *~
 *.ps
+*.h5m
