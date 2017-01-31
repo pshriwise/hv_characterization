@@ -167,7 +167,7 @@ void create_cube()
   }
   EntityHandle *surf_iter = surfs;
   unsigned *tps = tris_per_surf;
-  for (unsigned i = 0, j = 0; i < num_tris; ++i, ++j) {
+  for (unsigned i = 0, j = 1; i < num_tris; ++i, ++j) {
     const EntityHandle conn[] = { verts[connectivity[3*i  ]], 
                                     verts[connectivity[3*i+1]], 
                                     verts[connectivity[3*i+2]] };
