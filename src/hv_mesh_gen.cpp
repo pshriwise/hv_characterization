@@ -428,7 +428,8 @@ void generate_box_space( moab::EntityHandle surf, double A_f, std::vector<moab::
 	mbi->create_vertex( (coords+to_ewdam).array(), *ewdam_vert);
 	
 	//now add this corner and the dam vert to the dam verts list
-	ewdam->push_back(*ewdam_vert); ewdam->push_back(*i);
+	//order of push back is reversed here in comparison to north-south dam for correct normal
+	ewdam->push_back(*i); ewdam->push_back(*ewdam_vert); 
 
       } 
 	
