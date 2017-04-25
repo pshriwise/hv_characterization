@@ -17,18 +17,6 @@ TARGET_LINK_LIBRARIES(hv_cube ${DAGMC_LIBRARIES})
 TARGET_LINK_LIBRARIES(traverse_ray ${DAGMC_LIBRARIES})
 TARGET_LINK_LIBRARIES(tag_tris_w_norm ${DAGMC_LIBRARIES})
 
-
-
-if(MPI_COMPILE_FLAGS)
-  set_target_properties(hello PROPERTIES
-    COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
-endif()
-
-if(MPI_LINK_FLAGS)
-  set_target_properties(hello PROPERTIES
-    LINK_FLAGS "${MPI_LINK_FLAGS}")
-endif()
-
 INSTALL(TARGETS     sweep
 		    write_obbs
 		    count_leaves
