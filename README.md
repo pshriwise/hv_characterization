@@ -72,8 +72,8 @@ BVH.
 This is a nice way to ensure that a well-formed BVH is being created for the file.
 
 
- Single Ray Traversal Program
-==============================
+Single Ray Traversal Program
+------------------------------
 
 This program is designed to fire a single ray through the OBB tree of a volume in the model (indicated in the command line by its GLOBAL_ID). The ray data is provided via the command line arguments below.
 
@@ -81,5 +81,9 @@ This program is designed to fire a single ray through the OBB tree of a volume i
 
 Upon successful completion, it will produce a .vtk file containing the ray that was specified (also in the command line) and all of the oriented boxes encountered upon traversal of the tree for visualization.
 
+To Build
+========
 
+With a MOAB installation in the `LD_LIBRARY_PATH` variable, run the following in a build directory of choice:
 
+`cmake .. -DCMAKE_INSTALL_PREFIX=<install_location>`
