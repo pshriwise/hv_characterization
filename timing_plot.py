@@ -21,7 +21,7 @@ raw = np.fromfile(args.datafile,dtype=float,count=-1,sep="\t")
 raw = raw.reshape((raw.shape[0]/4,4))
 
 #Average and remove duplicate values
-#raw = (raw[0::2]+raw[1::2])/2
+raw = (raw[0::2]+raw[1::2])/2
 
 #Get unique X,Y,Z values
 X = np.unique(raw[:,0])

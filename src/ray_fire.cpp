@@ -42,7 +42,7 @@ void fire_rand_rays( moab::DagMC *dagi, moab::EntityHandle vol, int num_rand_ray
     uavg += uvw[0]; vavg += uvw[1]; wavg += uvw[2];
 #endif
     // added ray orientation
-    dagi->ray_fire(vol, xyz.array(), uvw.array(), dum, dist, NULL, 0, 1, &trv_stats );
+    dagi->ray_fire(vol, xyz.array(), uvw.array(), dum, dist, NULL, 1e37, 1, &trv_stats );
     
     if( dum == 0){
       // std::cout << "Ray origin: " << xyz << std::endl;

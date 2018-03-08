@@ -16,58 +16,8 @@ moab::Interface *mbi = new moab::Core();
 moab::ErrorCode build_obbs(moab::DagMC* dag, moab::Range surfs, moab::Range vols, moab::OrientedBoxTreeTool::Settings settings) {
   ErrorCode rval = MB_SUCCESS;
 
-  for (Range::iterator i = surfs.begin(); i != surfs.end(); ++i) {
-    EntityHandle root;
-    Range tris;
-    rval = mbi->get_entities_by_dimension( *i, 2, tris );
-    if (MB_SUCCESS != rval)
-      return rval;
-    if (tris.empty())
-      std::cerr << "WARNING: Surface " << *i << " has no facets." << std::endl;
-    rval = dag->obb_tree()->build( tris, root, &settings );
-    if (MB_SUCCESS != rval)
-      return rval;
-    rval = mbi->add_entities( root, &*i, 1 );
-    if (MB_SUCCESS != rval)
-      return rval;
-    rval = mbi->tag_set_data( dag->obb_tag(), &*i, 1, &root );
-    if (MB_SUCCESS != rval)
-      return rval;
-  }
-
-  for (Range::iterator i = vols.begin(); i != vols.end(); ++i) {
-    // get all surfaces in volume
-    moab::Range tmp_surfs;
-    rval = mbi->get_child_meshsets( *i, tmp_surfs );
-    if (MB_SUCCESS != rval)
-      return rval;
-
-    // get OBB trees for each surface
-    moab::EntityHandle root;
-    moab::Range trees;
-    for (Range::iterator j = tmp_surfs.begin();  j != tmp_surfs.end(); ++j) {
-      // skip any surfaces that are non-manifold in the volume
-      // because point containment code will get confused by them
-      int sense = 0;
-      rval = dag->surface_sense( *i, *j, sense );
-      if (MB_SUCCESS != rval) {
-        std::cerr << "Surface/Volume sense data missing." << std::endl;
-        return rval;
-      }
-      if (!sense)
-        continue;
-      rval = mbi->tag_get_data( dag->obb_tag(), &*j, 1, &root );
-      if (MB_SUCCESS != rval || !root) return MB_FAILURE;
-      trees.insert( root );
-    }
-    
-    // build OBB tree for volume
-    rval = dag->obb_tree()->join_trees( trees, root );
-    if (MB_SUCCESS != rval) return rval;
-
-    rval = mbi->tag_set_data( dag->obb_tag(), &*i, 1, &root );
-    if (MB_SUCCESS != rval) return rval;
-  }
+  rval = dag->init_OBBTree();
+  MB_CHK_SET_ERR(rval, "Failed to initialize OBB Tree");
 
   return MB_SUCCESS;
 }
@@ -83,8 +33,8 @@ moab::ErrorCode test_hv_cube_mesh( double A_f, double valence, double &ray_fire_
 	  moab::OrientedBoxTreeTool::Settings settings; 
 	  settings.max_leaf_entities = 8; 
 	  settings.max_depth = 0;
-	  settings.worst_cost = worst_split_ratio; 
-	  settings.best_cost = 0.4;
+	  settings.worst_split_ratio = worst_split_ratio; 
+	  settings.best_split_ratio = 0.4;
 	  settings.set_options = MESHSET_SET;
 
 	  //now we'll try to load this mesh-file into a dagmc instance
